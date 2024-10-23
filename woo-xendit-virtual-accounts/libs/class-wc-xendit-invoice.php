@@ -5,12 +5,12 @@ if (!defined('ABSPATH')) {
 
 class WC_Xendit_Invoice extends WC_Payment_Gateway
 {
-    const DEFAULT_MAXIMUM_AMOUNT = 1000000000;
-    const DEFAULT_MINIMUM_AMOUNT = 10000;
-    const DEFAULT_EXTERNAL_ID_VALUE = 'woocommerce-xendit';
-    const DEFAULT_CHECKOUT_FLOW = 'CHECKOUT_PAGE';
+    public const DEFAULT_MAXIMUM_AMOUNT = 1000000000;
+    public const DEFAULT_MINIMUM_AMOUNT = 10000;
+    public const DEFAULT_EXTERNAL_ID_VALUE = 'woocommerce-xendit';
+    public const DEFAULT_CHECKOUT_FLOW = 'CHECKOUT_PAGE';
 
-    const API_KEY_FIELDS = array('dummy_api_key', 'dummy_secret_key', 'dummy_api_key_dev', 'dummy_secret_key_dev');
+    public const API_KEY_FIELDS = array('dummy_api_key', 'dummy_secret_key', 'dummy_api_key_dev', 'dummy_secret_key_dev');
 
     /**
      * @var WC_Xendit_Invoice
@@ -27,7 +27,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     public $supported_currencies = array(
         'IDR',
         'PHP',
-        'USD'
+        'USD',
+        'MYR'
     );
 
     /** @var string $developmentmode */
@@ -444,8 +445,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     {
         if (empty($this->is_connected)) {
             return;
-        }
-        ?>
+        } ?>
             <h3 class="wc-settings-sub-title"><?php echo __('Xendit Merchant Info', 'woocommerce-xendit')?></h3>
             <table class="form-table">
                 <tbody>
@@ -475,8 +475,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     public function admin_options()
     {
         $this->get_xendit_connection(); // Always check the Xendit connection on the top of admin_options
-        $this->initialize_xendit_onboarding_info();
-        ?>
+        $this->initialize_xendit_onboarding_info(); ?>
 
         <?php if ($this->is_connected) : ?>
         <table class="form-table">
@@ -487,8 +486,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
             if (empty($this->get_option('secret_key')) && empty($this->get_option('secret_key_dev'))) {
                 unset($this->form_fields['dummy_secret_key']);
                 unset($this->form_fields['dummy_secret_key_dev']);
-            }
-            ?>
+            } ?>
 
             <?php $this->generate_settings_html(); ?>
         </table>
@@ -593,8 +591,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                     <?php
                     try {
                         $site_data = WC_Xendit_Site_Data::retrieve();
-                        $create_plugin = $this->xenditClass->createPluginInfo($site_data);
-                        ?>
+                        $create_plugin = $this->xenditClass->createPluginInfo($site_data); ?>
                     new swal({
                         type: 'success',
                         title: '<?= esc_html(__('Success', 'woocommerce-xendit')); ?>',
@@ -617,8 +614,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                         }
                     )
                         <?php
-                    }
-                    ?>
+                    } ?>
                 });
 
                 let xendit_connect_button = $('#woocommerce_xendit_connect_button');
@@ -1325,7 +1321,89 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                 return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Akulaku');
             case 'QRPH':
                 return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'QRPh');
-            
+            case 'DD_AFFIN_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Affin Bank');
+            case 'DD_AFFIN_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Affin Bank B2B');
+            case 'DD_AGRO_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'AGRONet');
+            case 'DD_AGRO_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'AGRONetBIZ');
+            case 'DD_ALLIANCE_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Alliance Bank (Personal)');
+            case 'DD_ALLIANCE_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Alliance Bank (Business)');
+            case 'DD_AMBANK_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'AmBank');
+            case 'DD_AMBANK_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'AmBank (Business)');
+            case 'DD_BNP_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'BNP Paribas');
+            case 'DD_BOC_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Bank Of China');
+            case 'DD_BSN_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'BSN');
+            case 'DD_CIMB_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'CIMB Clicks');
+            case 'DD_CIMB_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'CIMB (Business)');
+            case 'DD_CITIBANK_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Citibank Corporate Banking');
+            case 'DD_DEUTSCHE_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Deutsche Bank');
+            case 'DD_HLB_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Hong Leong Bank');
+            case 'DD_HLB_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Hong Leong Bank (Business)');
+            case 'DD_HSBC_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'HSBC Bank');
+            case 'DD_HSBC_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'HSBC Bank (Business)');
+            case 'DD_ISLAM_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Bank Islam');
+            case 'DD_ISLAM_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Bank Islam (Business)');
+            case 'DD_KFH_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'KFH');
+            case 'DD_KFH_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'KFH (Business)');
+            case 'DD_MAYB2E_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Maybank2E (Business)');
+            case 'DD_MAYB2U_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Maybank2u');
+            case 'DD_MUAMALAT_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Bank Muamalat');
+            case 'DD_MUAMALAT_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Bank Muamalat (Business)');
+            case 'DD_OCBC_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'OCBC Bank');
+            case 'DD_OCBC_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'OCBC Bank (Business)');
+            case 'DD_PUBLIC_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Public Bank');
+            case 'DD_PUBLIC_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Public Bank PB enterprise');
+            case 'DD_RAKYAT_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Bank Rakyat');
+            case 'DD_RAKYAT_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'i-bizRAKYAT');
+            case 'DD_RHB_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'RHB Bank');
+            case 'DD_RHB_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'RHB Bank (Business)');
+            case 'DD_SCH_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Standard Chartered');
+            case 'DD_SCH_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Standard Chartered (Business)');
+            case 'DD_UOB_FPX':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'UOB Bank');
+            case 'DD_UOB_FPX_BUSINESS':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'UOB Infinity');
+            case 'TOUCHNGO':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Touch \'N Go');
+            case 'WECHATPAY':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'WechatPay');
+
             default:
                 return sprintf(wp_kses(__('Pay with bank transfer %1$s or virtual account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), $this->method_code);
         }
@@ -1430,7 +1508,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
 
         // validate sub account
         try {
-            if ($this->settings['enable_xenplatform'] === 'yes') {
+            if (isset($this->settings['enable_xenplatform']) && $this->settings['enable_xenplatform'] === 'yes') {
                 $this->validate_sub_account($this->settings['on_behalf_of']);
             }
         } catch (Exception $e) {
@@ -1599,7 +1677,130 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
             case 'QRPH':
                 $xendit = new WC_Xendit_QRPh();
                 break;
-            
+            case 'DD_AFFIN_FPX':
+                $xendit = new WC_Xendit_DD_Affin_FPX();
+                break;
+            case 'DD_AFFIN_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Affin_FPX_Business();
+                break;
+            case 'DD_AGRO_FPX':
+                $xendit = new WC_Xendit_DD_Agro_FPX();
+                break;
+            case 'DD_AGRO_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Agro_FPX_Business();
+                break;
+            case 'DD_ALLIANCE_FPX':
+                $xendit = new WC_Xendit_DD_Alliance_FPX();
+                break;
+            case 'DD_ALLIANCE_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Alliance_FPX_Business();
+                break;
+            case 'DD_AMBANK_FPX':
+                $xendit = new WC_Xendit_DD_Ambank_FPX();
+                break;
+            case 'DD_AMBANK_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Ambank_FPX_Business();
+                break;
+            case 'DD_BNP_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_BNP_FPX_Business();
+                break;
+            case 'DD_BOC_FPX':
+                $xendit = new WC_Xendit_DD_BOC_FPX();
+                break;
+            case 'DD_BSN_FPX':
+                $xendit = new WC_Xendit_DD_BSN_FPX();
+                break;
+            case 'DD_CIMB_FPX':
+                $xendit = new WC_Xendit_DD_CIMB_FPX();
+                break;
+            case 'DD_CIMB_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_CIMB_FPX_Business();
+                break;
+            case 'DD_CITIBANK_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Citibank_FPX_Business();
+                break;
+            case 'DD_DEUTSCHE_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Deutsche_FPX_Business();
+                break;
+            case 'DD_HLB_FPX':
+                $xendit = new WC_Xendit_DD_HLB_FPX();
+                break;
+            case 'DD_HLB_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_HLB_FPX_Business();
+                break;
+            case 'DD_HSBC_FPX':
+                $xendit = new WC_Xendit_DD_HSBC_FPX();
+                break;
+            case 'DD_HSBC_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_HSBC_FPX_Business();
+                break;
+            case 'DD_ISLAM_FPX':
+                $xendit = new WC_Xendit_DD_Islam_FPX();
+                break;
+            case 'DD_ISLAM_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Islam_FPX_Business();
+                break;
+            case 'DD_KFH_FPX':
+                $xendit = new WC_Xendit_DD_KFH_FPX();
+                break;
+            case 'DD_KFH_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_KFH_FPX_Business();
+                break;
+            case 'DD_MAYB2E_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Mayb2e_FPX_Business();
+                break;
+            case 'DD_MAYB2U_FPX':
+                $xendit = new WC_Xendit_DD_Mayb2u_FPX();
+                break;
+            case 'DD_MUAMALAT_FPX':
+                $xendit = new WC_Xendit_DD_Muamalat_FPX();
+                break;
+            case 'DD_MUAMALAT_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Muamalat_FPX_Business();
+                break;
+            case 'DD_OCBC_FPX':
+                $xendit = new WC_Xendit_DD_OCBC_FPX();
+                break;
+            case 'DD_OCBC_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_OCBC_FPX_Business();
+                break;
+            case 'DD_PUBLIC_FPX':
+                $xendit = new WC_Xendit_DD_Public_FPX();
+                break;
+            case 'DD_PUBLIC_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Public_FPX_Business();
+                break;
+            case 'DD_RAKYAT_FPX':
+                $xendit = new WC_Xendit_DD_Rakyat_FPX();
+                break;
+            case 'DD_RAKYAT_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_Rakyat_FPX_Business();
+                break;
+            case 'DD_RHB_FPX':
+                $xendit = new WC_Xendit_DD_RHB_FPX();
+                break;
+            case 'DD_RHB_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_RHB_FPX_Business();
+                break;
+            case 'DD_SCH_FPX':
+                $xendit = new WC_Xendit_DD_SCH_FPX();
+                break;
+            case 'DD_SCH_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_SCH_FPX_Business();
+                break;
+            case 'DD_UOB_FPX':
+                $xendit = new WC_Xendit_DD_UOB_FPX();
+                break;
+            case 'DD_UOB_FPX_BUSINESS':
+                $xendit = new WC_Xendit_DD_UOB_FPX_Business();
+                break;
+            case 'TOUCHNGO':
+                $xendit = new WC_Xendit_Touchngo();
+                break;
+            case 'WECHATPAY':
+                $xendit = new WC_Xendit_Wechatpay();
+                break;
+
             default:
                 return false;
         }
@@ -1662,8 +1863,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
 
         $canceled_order = $wpdb->get_col(
             $wpdb->prepare(
-				// @codingStandardsIgnoreStart
-				"SELECT posts.ID
+                // @codingStandardsIgnoreStart
+                "SELECT posts.ID
 				FROM {$wpdb->posts} AS posts
                 LEFT JOIN {$wpdb->postmeta} AS pm_expired
                     ON posts.ID = pm_expired.post_id
@@ -1671,16 +1872,16 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                 LEFT JOIN {$wpdb->postmeta} AS pm_method
                     ON posts.ID = pm_method.post_id
                         AND pm_method.meta_key = '_payment_method'
-				WHERE posts.post_type IN ('" . implode( "','", wc_get_order_types() ) . "')
+				WHERE posts.post_type IN ('" . implode("','", wc_get_order_types()) . "')
                     AND posts.post_status = 'wc-cancelled'
                     AND `pm_method`.`meta_value` LIKE 'xendit_%'
                     AND pm_expired.meta_id IS NULL"
-			)
-		);
+            )
+        );
 
         if ($canceled_order) {
             foreach ($canceled_order as $cancel_order) {
-                $order = wc_get_order( $cancel_order );
+                $order = wc_get_order($cancel_order);
                 $xendit_invoice_expired = $order->get_meta('Xendit_invoice_expired');
                 $xendit_invoice_id = $order->get_meta('Xendit_invoice');
                 if (empty($xendit_invoice_expired)) {

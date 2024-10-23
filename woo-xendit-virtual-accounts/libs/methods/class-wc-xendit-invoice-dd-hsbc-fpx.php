@@ -4,22 +4,18 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class WC_Xendit_Grabpay extends WC_Xendit_Invoice
+class WC_Xendit_DD_HSBC_FPX extends WC_Xendit_Invoice
 {
-    // For PH
-    const DEFAULT_MAXIMUM_AMOUNT = 100000;
+    const DEFAULT_MAXIMUM_AMOUNT = 30000;
     const DEFAULT_MINIMUM_AMOUNT = 1;
-    // For MY
-    const DEFAULT_MAXIMUM_AMOUNT_MY = 1500;
-    const DEFAULT_MINIMUM_AMOUNT_MY = 1;
 
-    const XENDIT_METHOD_CODE = 'GRABPAY';
+    const XENDIT_METHOD_CODE = 'DD_HSBC_FPX';
 
     public function __construct()
     {
         parent::__construct();
 
-        $this->id = 'xendit_grabpay';
+        $this->id = 'xendit_dd_hsbc_fpx';
 
         // Load the form fields.
         $this->init_form_fields();
@@ -30,22 +26,14 @@ class WC_Xendit_Grabpay extends WC_Xendit_Invoice
         $this->enabled = $this->get_option('enabled');
 
         $this->method_code = self::XENDIT_METHOD_CODE;
-        $this->default_title = 'GrabPay';
+        $this->default_title = 'HSBC Bank';
         $this->title = !empty($this->get_option('channel_name')) ? $this->get_option('channel_name') : $this->default_title;
         $this->description = !empty($this->get_option('payment_description')) ? nl2br($this->get_option('payment_description')) : $this->get_xendit_method_description();
-
-        if (get_woocommerce_currency() === 'MYR') {
-            $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT_MY;
-            $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT_MY;
-        } else { // default will be on php
-            $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT;
-            $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT;
-        }
 
         $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT;
         $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT;
 
-        $this->method_title = __('Xendit GrabPay', 'woocommerce-xendit');
+        $this->method_title = __('Xendit HSBC Bank', 'woocommerce-xendit');
         $this->method_description = $this->get_xendit_admin_description();
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -56,7 +44,7 @@ class WC_Xendit_Grabpay extends WC_Xendit_Invoice
      */
     public function init_form_fields()
     {
-        $this->form_fields = require(WC_XENDIT_PG_PLUGIN_PATH . '/libs/forms/wc-xendit-invoice-grabpay-settings.php');
+        $this->form_fields = require(WC_XENDIT_PG_PLUGIN_PATH . '/libs/forms/wc-xendit-invoice-dd-hsbc-fpx-settings.php');
     }
 
     /**

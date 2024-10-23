@@ -10,6 +10,8 @@ class WC_Xendit_Shopeepay extends WC_Xendit_Invoice
     const DEFAULT_MAXIMUM_AMOUNT_PH = 200000;
     const DEFAULT_MINIMUM_AMOUNT = 100;
     const DEFAULT_MINIMUM_AMOUNT_PH = 1;
+    const DEFAULT_MINIMUM_AMOUNT_MY = 1;
+    const DEFAULT_MAXIMUM_AMOUNT_MY = 4999;
 
     const XENDIT_METHOD_CODE = 'shopeepay';
 
@@ -33,8 +35,16 @@ class WC_Xendit_Shopeepay extends WC_Xendit_Invoice
         $this->title = !empty($this->get_option('channel_name')) ? $this->get_option('channel_name') : $this->default_title;
         $this->description = !empty($this->get_option('payment_description')) ? nl2br($this->get_option('payment_description')) : $this->get_xendit_method_description();
 
-        $this->DEFAULT_MAXIMUM_AMOUNT = get_woocommerce_currency() === 'PHP' ? self::DEFAULT_MAXIMUM_AMOUNT_PH : self::DEFAULT_MAXIMUM_AMOUNT;
-        $this->DEFAULT_MINIMUM_AMOUNT = get_woocommerce_currency() === 'PHP' ? self::DEFAULT_MINIMUM_AMOUNT_PH : self::DEFAULT_MINIMUM_AMOUNT;
+        if (get_woocommerce_currency() === 'MYR') {
+            $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT_MY;
+            $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT_MY;
+        } else  if (get_woocommerce_currency() === 'PHP') {
+            $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT_PH;
+            $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT_PH;
+        } else {
+            $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT;
+            $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT;
+        }
 
         $this->method_title = __('Xendit ShopeePay', 'woocommerce-xendit');
         $this->method_description = $this->get_xendit_admin_description();

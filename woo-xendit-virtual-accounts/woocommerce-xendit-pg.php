@@ -7,12 +7,12 @@ if (!defined('ABSPATH')) {
 Plugin Name: Woocommerce - Xendit
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 5.1.2
+Version: 5.1.4
 Author: Xendit
 Author URI: https://www.xendit.co/
 */
 
-define('WC_XENDIT_PG_VERSION', '5.1.2');
+define('WC_XENDIT_PG_VERSION', '5.1.4');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
@@ -108,7 +108,48 @@ function woocommerce_xendit_pg_init()
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-cimbva.php';
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-jeniuspay.php';
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-qrph.php';
-                
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-affin-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-affin-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-agro-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-agro-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-alliance-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-alliance-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-ambank-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-ambank-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-bnp-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-boc-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-bsn-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-cimb-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-cimb-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-citibank-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-deutsche-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-hlb-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-hlb-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-hsbc-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-hsbc-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-islam-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-islam-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-kfh-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-kfh-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-mayb2e-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-mayb2u-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-muamalat-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-muamalat-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-ocbc-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-ocbc-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-public-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-public-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-rakyat-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-rakyat-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-rhb-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-rhb-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-sch-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-sch-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-uob-fpx.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-uob-fpx-business.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-touchngo.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-wechatpay.php';
+
 
                 require_once dirname(__FILE__) . '/libs/blocks/class-wc-xendit-blocks.php';
 
@@ -199,7 +240,48 @@ function woocommerce_xendit_pg_init()
                         'WC_Xendit_CIMBVA',
                         // 'WC_Xendit_Jeniuspay',
                         'WC_Xendit_QRPh',
-                        
+                        'WC_Xendit_DD_Affin_FPX',
+                        'WC_Xendit_DD_Affin_FPX_Business',
+                        'WC_Xendit_DD_Agro_FPX',
+                        'WC_Xendit_DD_Agro_FPX_Business',
+                        'WC_Xendit_DD_Alliance_FPX',
+                        'WC_Xendit_DD_Alliance_FPX_Business',
+                        'WC_Xendit_DD_Ambank_FPX',
+                        'WC_Xendit_DD_Ambank_FPX_Business',
+                        'WC_Xendit_DD_BNP_FPX_Business',
+                        'WC_Xendit_DD_BOC_FPX',
+                        'WC_Xendit_DD_BSN_FPX',
+                        'WC_Xendit_DD_CIMB_FPX',
+                        'WC_Xendit_DD_CIMB_FPX_Business',
+                        'WC_Xendit_DD_Citibank_FPX_Business',
+                        'WC_Xendit_DD_Deutsche_FPX_Business',
+                        'WC_Xendit_DD_HLB_FPX',
+                        'WC_Xendit_DD_HLB_FPX_Business',
+                        'WC_Xendit_DD_HSBC_FPX',
+                        'WC_Xendit_DD_HSBC_FPX_Business',
+                        'WC_Xendit_DD_Islam_FPX',
+                        'WC_Xendit_DD_Islam_FPX_Business',
+                        'WC_Xendit_DD_KFH_FPX',
+                        'WC_Xendit_DD_KFH_FPX_Business',
+                        'WC_Xendit_DD_Mayb2e_FPX_Business',
+                        'WC_Xendit_DD_Mayb2u_FPX',
+                        'WC_Xendit_DD_Muamalat_FPX',
+                        'WC_Xendit_DD_Muamalat_FPX_Business',
+                        'WC_Xendit_DD_OCBC_FPX',
+                        'WC_Xendit_DD_OCBC_FPX_Business',
+                        'WC_Xendit_DD_Public_FPX',
+                        'WC_Xendit_DD_Public_FPX_Business',
+                        'WC_Xendit_DD_Rakyat_FPX',
+                        'WC_Xendit_DD_Rakyat_FPX_Business',
+                        'WC_Xendit_DD_RHB_FPX',
+                        'WC_Xendit_DD_RHB_FPX_Business',
+                        'WC_Xendit_DD_SCH_FPX',
+                        'WC_Xendit_DD_SCH_FPX_Business',
+                        'WC_Xendit_DD_UOB_FPX',
+                        'WC_Xendit_DD_UOB_FPX_Business',
+                        'WC_Xendit_Touchngo',
+                        'WC_Xendit_Wechatpay',
+
                         $this->should_load_addons() ? 'WC_Xendit_CC_Addons' : 'WC_Xendit_CC'
                     )
                 );
@@ -276,12 +358,55 @@ function woocommerce_xendit_pg_init()
                         $methods[] = 'WC_Xendit_Cashalo';
                         $methods[] = 'WC_Xendit_Shopeepay';
                         $methods[] = 'WC_Xendit_QRPh';
-                        
+                        // method_parser:php:woocommerce_add_xendit_gateway
+                        // replace_after_use:php:woocommerce_add_xendit_gateway
                         break;
                     case 'MYR':
                         // Payment method for MYR
-                        // method_parser:myr:woocommerce_add_xendit_gateway
-                        // replace_after_use:myr:woocommerce_add_xendit_gateway
+                        $methods[] = 'WC_Xendit_DD_Affin_FPX';
+                        $methods[] = 'WC_Xendit_DD_Affin_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Agro_FPX';
+                        $methods[] = 'WC_Xendit_DD_Agro_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Alliance_FPX';
+                        $methods[] = 'WC_Xendit_DD_Alliance_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Ambank_FPX';
+                        $methods[] = 'WC_Xendit_DD_Ambank_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_BNP_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_BOC_FPX';
+                        $methods[] = 'WC_Xendit_DD_BSN_FPX';
+                        $methods[] = 'WC_Xendit_DD_CIMB_FPX';
+                        $methods[] = 'WC_Xendit_DD_CIMB_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Citibank_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Deutsche_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_HLB_FPX';
+                        $methods[] = 'WC_Xendit_DD_HLB_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_HSBC_FPX';
+                        $methods[] = 'WC_Xendit_DD_HSBC_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Islam_FPX';
+                        $methods[] = 'WC_Xendit_DD_Islam_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_KFH_FPX';
+                        $methods[] = 'WC_Xendit_DD_KFH_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Mayb2e_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Mayb2u_FPX';
+                        $methods[] = 'WC_Xendit_DD_Muamalat_FPX';
+                        $methods[] = 'WC_Xendit_DD_Muamalat_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_OCBC_FPX';
+                        $methods[] = 'WC_Xendit_DD_OCBC_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Public_FPX';
+                        $methods[] = 'WC_Xendit_DD_Public_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_Rakyat_FPX';
+                        $methods[] = 'WC_Xendit_DD_Rakyat_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_RHB_FPX';
+                        $methods[] = 'WC_Xendit_DD_RHB_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_SCH_FPX';
+                        $methods[] = 'WC_Xendit_DD_SCH_FPX_Business';
+                        $methods[] = 'WC_Xendit_DD_UOB_FPX';
+                        $methods[] = 'WC_Xendit_DD_UOB_FPX_Business';
+                        $methods[] = 'WC_Xendit_Grabpay';
+                        $methods[] = 'WC_Xendit_Shopeepay';
+                        $methods[] = 'WC_Xendit_Touchngo';
+                        $methods[] = 'WC_Xendit_Wechatpay';
+
                         break;
                     case 'VND':
                         // Payment method for VND
@@ -720,9 +845,7 @@ function woocommerce_xendit_pg_init()
             $subtotals = array();
             foreach ($items as $item) {
                 array_push($subtotals, wc_price($item->get_subtotal()));
-            }
-
-            ?>
+            } ?>
             <script>
                 var subtotals = <?php echo json_encode($subtotals); ?>;
                 var tableOrderItem = document.getElementsByClassName('woocommerce_order_items');
@@ -771,14 +894,14 @@ function woocommerce_xendit_pg_init()
             if ($xendit_card_tag > 0 && $coupon_tag === 0) {
                 ?>
                 <script>
-                    var couponLabelName = '<?php echo 'Card Promotion';?>';
+                    var couponLabelName = '<?php echo 'Card Promotion'; ?>';
                 </script>
                 <?php
                 return true;
             } elseif ($xendit_card_tag > 0 && $coupon_tag > 0) {
                 ?>
                 <script>
-                    var couponLabelName = '<?php echo 'Coupon and Card Promotion';?>';
+                    var couponLabelName = '<?php echo 'Coupon and Card Promotion'; ?>';
                 </script>
                 <?php
                 return true;

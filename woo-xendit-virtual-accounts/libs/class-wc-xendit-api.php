@@ -414,6 +414,40 @@ class WC_Xendit_PG_API
     }
 
     /**
+     * Log metrics to Datadog for monitoring
+     *
+     * @param $id
+     * @return bool
+     * @throws Exception
+     */
+    public function acknowledge($ip)
+    {
+        $end_point = $this->tpi_gateway_domain.'/tpi/webhook/acknowledge';
+
+        $args = array(
+            'headers' => $this->defaultHeader(),
+            'timeout' => WC_Xendit_PG_API::DEFAULT_TIME_OUT,
+            'body' => json_encode(array('ip' => $ip))
+        );
+
+        try {
+            $response = wp_remote_post($end_point, $args);
+            if (is_wp_error($response)) {
+                return false;
+            }
+
+            $body = json_decode($response['body'], true);
+            if (!empty($body['error_code'])) {
+                return false;
+            }
+
+            return $body['acknowledge'];
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
      * @param string $name
      * @param array $tags
      * @return array
