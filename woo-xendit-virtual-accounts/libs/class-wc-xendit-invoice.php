@@ -1313,8 +1313,6 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                 return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'ECPay School');
             case 'CASHALO':
                 return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Cashalo');
-            case 'UANGME':
-                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Uangme');
             case 'ASTRAPAY':
                 return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'AstraPay');
             case 'AKULAKU':
@@ -1649,9 +1647,6 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                 break;
             case 'CASHALO':
                 $xendit = new WC_Xendit_Cashalo();
-                break;
-            case 'UANGME':
-                $xendit = new WC_Xendit_Uangme();
                 break;
             case 'ASTRAPAY':
                 $xendit = new WC_Xendit_Astrapay();

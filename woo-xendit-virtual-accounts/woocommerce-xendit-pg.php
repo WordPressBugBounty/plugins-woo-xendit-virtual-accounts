@@ -7,12 +7,12 @@ if (!defined('ABSPATH')) {
 Plugin Name: Woocommerce - Xendit
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 5.1.4
+Version: 5.1.5
 Author: Xendit
 Author URI: https://www.xendit.co/
 */
 
-define('WC_XENDIT_PG_VERSION', '5.1.4');
+define('WC_XENDIT_PG_VERSION', '5.1.5');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
@@ -98,7 +98,6 @@ function woocommerce_xendit_pg_init()
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dp-ecpay-loan.php';
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dp-ecpay-school.php';
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-cashalo.php';
-                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-uangme.php';
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-astrapay.php';
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-akulaku.php';
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-dd-rcbc.php';
@@ -215,7 +214,6 @@ function woocommerce_xendit_pg_init()
                         'WC_Xendit_DD_BRI',
                         'WC_Xendit_QRIS',
                         'WC_Xendit_Kredivo',
-                        'WC_Xendit_Uangme',
                         'WC_Xendit_DD_BPI',
                         'WC_Xendit_7Eleven',
                         'WC_Xendit_LBC',
@@ -329,7 +327,6 @@ function woocommerce_xendit_pg_init()
                         $methods[] = 'WC_Xendit_DD_BRI';
                         $methods[] = 'WC_Xendit_QRIS';
                         $methods[] = 'WC_Xendit_Kredivo';
-                        $methods[] = 'WC_Xendit_Uangme';
                         $methods[] = 'WC_Xendit_Astrapay';
                         $methods[] = 'WC_Xendit_Akulaku';
                         $methods[] = 'WC_Xendit_Atome';
