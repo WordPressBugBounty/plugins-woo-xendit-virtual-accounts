@@ -7,12 +7,12 @@ if (!defined('ABSPATH')) {
 Plugin Name: Woocommerce - Xendit
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 5.1.5
+Version: 5.1.6
 Author: Xendit
 Author URI: https://www.xendit.co/
 */
 
-define('WC_XENDIT_PG_VERSION', '5.1.5');
+define('WC_XENDIT_PG_VERSION', '5.1.6');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 

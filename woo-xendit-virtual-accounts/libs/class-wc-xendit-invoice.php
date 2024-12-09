@@ -957,6 +957,16 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
 
         echo $return;
     }
+    public function get_success_redirect_url($order): string
+    {
+        $returnUrl = $this->get_return_url($order);
+
+        if (strpos($returnUrl, home_url()) === false) {
+            $returnUrl = rtrim(wc_get_checkout_url(), '/') . $returnUrl;
+        }
+
+        return $returnUrl;
+    }
 
     /**
      * @param $order_id
@@ -1015,7 +1025,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                 'payer_email' => $payer_email,
                 'description' => $description,
                 'client_type' => 'INTEGRATION',
-                'success_redirect_url' => $this->get_return_url($order),
+                'success_redirect_url' => $this->get_success_redirect_url($order),
                 'failure_redirect_url' => wc_get_checkout_url(),
                 'platform_callback_url' => $this->xendit_callback_url,
                 'checkout_redirect_flow' => $this->redirect_after,
