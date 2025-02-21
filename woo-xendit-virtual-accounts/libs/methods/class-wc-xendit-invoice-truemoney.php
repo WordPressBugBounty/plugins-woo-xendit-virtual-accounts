@@ -4,22 +4,18 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class WC_Xendit_Wechatpay extends WC_Xendit_Invoice
+class WC_Xendit_Truemoney extends WC_Xendit_Invoice
 {
-    const DEFAULT_MAXIMUM_AMOUNT = 25000;
-    const DEFAULT_MINIMUM_AMOUNT = 0.1;
+    const DEFAULT_MAXIMUM_AMOUNT = 50000;
+    const DEFAULT_MINIMUM_AMOUNT = 1;
 
-    const DEFAULT_MINIMUM_AMOUNT_TH = 1;
-    
-    const DEFAULT_MAXIMUM_AMOUNT_TH = 700000;
-
-    const XENDIT_METHOD_CODE = 'WECHATPAY';
+    const XENDIT_METHOD_CODE = 'TRUEMONEY';
 
     public function __construct()
     {
         parent::__construct();
 
-        $this->id = 'xendit_wechatpay';
+        $this->id = 'xendit_truemoney';
 
         // Load the form fields.
         $this->init_form_fields();
@@ -30,19 +26,14 @@ class WC_Xendit_Wechatpay extends WC_Xendit_Invoice
         $this->enabled = $this->get_option('enabled');
 
         $this->method_code = self::XENDIT_METHOD_CODE;
-        $this->default_title = 'WechatPay';
+        $this->default_title = 'TrueMoney';
         $this->title = !empty($this->get_option('channel_name')) ? $this->get_option('channel_name') : $this->default_title;
         $this->description = !empty($this->get_option('payment_description')) ? nl2br($this->get_option('payment_description')) : $this->get_xendit_method_description();
 
-        if (get_woocommerce_currency() === 'THB') {
-            $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT_TH;
-            $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT_TH;
-        } else {
-            $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT;
-            $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT;
-        }
+        $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT;
+        $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT;
 
-        $this->method_title = __('Xendit WechatPay', 'woocommerce-xendit');
+        $this->method_title = __('Xendit TrueMoney', 'woocommerce-xendit');
         $this->method_description = $this->get_xendit_admin_description();
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -53,7 +44,7 @@ class WC_Xendit_Wechatpay extends WC_Xendit_Invoice
      */
     public function init_form_fields()
     {
-        $this->form_fields = require(WC_XENDIT_PG_PLUGIN_PATH . '/libs/forms/wc-xendit-invoice-wechatpay-settings.php');
+        $this->form_fields = require(WC_XENDIT_PG_PLUGIN_PATH . '/libs/forms/wc-xendit-invoice-truemoney-settings.php');
     }
 
     /**

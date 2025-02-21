@@ -1,0 +1,42 @@
+{
+    "name": "xendit/woocommerce-wp-plugin-va",
+    "description": "Woocommerce Xendit Payment Gateway Plugin",
+    "type": "wordpress-plugin",
+    "keywords": [
+      "xendit",
+      "woocommerce-wp-plugin-va"
+    ],
+    "homepage": "https://xendit.co",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+      {
+        "name": "Xendit",
+        "email": "thirdpartyintegration@xendit.co"
+      }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^8",
+        "yoast/phpunit-polyfills" : "1.1.0"
+    },
+    "require": {
+        "squizlabs/php_codesniffer": "*"
+    },
+    "scripts": {
+      "phpcbf": "phpcbf .",
+      "phpcs": "phpcs .",
+      "phpunit": "phpunit --testdox",
+      "phpstan": "phpstan --memory-limit=512M",
+      "phpcsfixer": "PHP_CS_FIXER_IGNORE_ENV=false ./vendor/bin/php-cs-fixer fix",
+      "test": [
+        "@phpcs",
+        "@phpstan",
+        "@phpunit"
+      ]
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "inpsyde/composer-assets-compiler": true
+        }
+    }
+}

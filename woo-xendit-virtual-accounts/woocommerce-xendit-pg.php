@@ -7,12 +7,12 @@ if (!defined('ABSPATH')) {
 Plugin Name: Woocommerce - Xendit
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 5.1.6
+Version: 5.1.7
 Author: Xendit
 Author URI: https://www.xendit.co/
 */
 
-define('WC_XENDIT_PG_VERSION', '5.1.6');
+define('WC_XENDIT_PG_VERSION', '5.1.7');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
@@ -148,8 +148,14 @@ function woocommerce_xendit_pg_init()
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-uob-fpx-business.php';
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-touchngo.php';
                 require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-wechatpay.php';
-
-
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-bay-mb.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-bbl-mb.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-kbank-mb.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-ktb-mb.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-dd-scb-mb.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-linepay.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-promptpay.php';
+                require_once dirname(__FILE__) . '/libs/methods/class-wc-xendit-invoice-truemoney.php';
                 require_once dirname(__FILE__) . '/libs/blocks/class-wc-xendit-blocks.php';
 
                 add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'plugin_action_links'));
@@ -279,7 +285,14 @@ function woocommerce_xendit_pg_init()
                         'WC_Xendit_DD_UOB_FPX_Business',
                         'WC_Xendit_Touchngo',
                         'WC_Xendit_Wechatpay',
-
+                        'WC_Xendit_DD_Bay_Mb',
+                        'WC_Xendit_DD_Bbl_Mb',
+                        'WC_Xendit_DD_Kbank_Mb',
+                        'WC_Xendit_DD_Ktb_Mb',
+                        'WC_Xendit_DD_Scb_Mb',
+                        'WC_Xendit_Linepay',
+                        'WC_Xendit_Promptpay',
+                        'WC_Xendit_Truemoney',
                         $this->should_load_addons() ? 'WC_Xendit_CC_Addons' : 'WC_Xendit_CC'
                     )
                 );
@@ -403,7 +416,8 @@ function woocommerce_xendit_pg_init()
                         $methods[] = 'WC_Xendit_Shopeepay';
                         $methods[] = 'WC_Xendit_Touchngo';
                         $methods[] = 'WC_Xendit_Wechatpay';
-
+                        // method_parser:myr:woocommerce_add_xendit_gateway
+                        // replace_after_use:myr:woocommerce_add_xendit_gateway
                         break;
                     case 'VND':
                         // Payment method for VND
@@ -412,8 +426,17 @@ function woocommerce_xendit_pg_init()
                         break;
                     case 'THB':
                         // Payment method for THB
-                        // method_parser:thb:woocommerce_add_xendit_gateway
-                        // replace_after_use:thb:woocommerce_add_xendit_gateway
+                        $methods[] = 'WC_Xendit_DD_Bay_Mb';
+                        $methods[] = 'WC_Xendit_DD_Bbl_Mb';
+                        $methods[] = 'WC_Xendit_DD_Kbank_Mb';
+                        $methods[] = 'WC_Xendit_DD_Ktb_Mb';
+                        $methods[] = 'WC_Xendit_DD_Scb_Mb';
+                        $methods[] = 'WC_Xendit_Linepay';
+                        $methods[] = 'WC_Xendit_Promptpay';
+                        $methods[] = 'WC_Xendit_Truemoney';
+                        $methods[] = 'WC_Xendit_Wechatpay';
+                        $methods[] = 'WC_Xendit_Shopeepay';
+                    
                         break;
                     default:
                         break;
@@ -842,7 +865,9 @@ function woocommerce_xendit_pg_init()
             $subtotals = array();
             foreach ($items as $item) {
                 array_push($subtotals, wc_price($item->get_subtotal()));
-            } ?>
+            }
+
+            ?>
             <script>
                 var subtotals = <?php echo json_encode($subtotals); ?>;
                 var tableOrderItem = document.getElementsByClassName('woocommerce_order_items');
@@ -891,14 +916,14 @@ function woocommerce_xendit_pg_init()
             if ($xendit_card_tag > 0 && $coupon_tag === 0) {
                 ?>
                 <script>
-                    var couponLabelName = '<?php echo 'Card Promotion'; ?>';
+                    var couponLabelName = '<?php echo 'Card Promotion';?>';
                 </script>
                 <?php
                 return true;
             } elseif ($xendit_card_tag > 0 && $coupon_tag > 0) {
                 ?>
                 <script>
-                    var couponLabelName = '<?php echo 'Coupon and Card Promotion'; ?>';
+                    var couponLabelName = '<?php echo 'Coupon and Card Promotion';?>';
                 </script>
                 <?php
                 return true;

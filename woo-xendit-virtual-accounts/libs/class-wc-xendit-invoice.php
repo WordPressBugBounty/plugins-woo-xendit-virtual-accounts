@@ -5,12 +5,12 @@ if (!defined('ABSPATH')) {
 
 class WC_Xendit_Invoice extends WC_Payment_Gateway
 {
-    public const DEFAULT_MAXIMUM_AMOUNT = 1000000000;
-    public const DEFAULT_MINIMUM_AMOUNT = 10000;
-    public const DEFAULT_EXTERNAL_ID_VALUE = 'woocommerce-xendit';
-    public const DEFAULT_CHECKOUT_FLOW = 'CHECKOUT_PAGE';
+    const DEFAULT_MAXIMUM_AMOUNT = 1000000000;
+    const DEFAULT_MINIMUM_AMOUNT = 10000;
+    const DEFAULT_EXTERNAL_ID_VALUE = 'woocommerce-xendit';
+    const DEFAULT_CHECKOUT_FLOW = 'CHECKOUT_PAGE';
 
-    public const API_KEY_FIELDS = array('dummy_api_key', 'dummy_secret_key', 'dummy_api_key_dev', 'dummy_secret_key_dev');
+    const API_KEY_FIELDS = array('dummy_api_key', 'dummy_secret_key', 'dummy_api_key_dev', 'dummy_secret_key_dev');
 
     /**
      * @var WC_Xendit_Invoice
@@ -28,7 +28,9 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         'IDR',
         'PHP',
         'USD',
-        'MYR'
+        'MYR',
+        'THB',
+        'VND',
     );
 
     /** @var string $developmentmode */
@@ -445,7 +447,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     {
         if (empty($this->is_connected)) {
             return;
-        } ?>
+        }
+        ?>
             <h3 class="wc-settings-sub-title"><?php echo __('Xendit Merchant Info', 'woocommerce-xendit')?></h3>
             <table class="form-table">
                 <tbody>
@@ -475,7 +478,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     public function admin_options()
     {
         $this->get_xendit_connection(); // Always check the Xendit connection on the top of admin_options
-        $this->initialize_xendit_onboarding_info(); ?>
+        $this->initialize_xendit_onboarding_info();
+        ?>
 
         <?php if ($this->is_connected) : ?>
         <table class="form-table">
@@ -486,7 +490,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
             if (empty($this->get_option('secret_key')) && empty($this->get_option('secret_key_dev'))) {
                 unset($this->form_fields['dummy_secret_key']);
                 unset($this->form_fields['dummy_secret_key_dev']);
-            } ?>
+            }
+            ?>
 
             <?php $this->generate_settings_html(); ?>
         </table>
@@ -591,7 +596,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                     <?php
                     try {
                         $site_data = WC_Xendit_Site_Data::retrieve();
-                        $create_plugin = $this->xenditClass->createPluginInfo($site_data); ?>
+                        $create_plugin = $this->xenditClass->createPluginInfo($site_data);
+                        ?>
                     new swal({
                         type: 'success',
                         title: '<?= esc_html(__('Success', 'woocommerce-xendit')); ?>',
@@ -614,7 +620,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                         }
                     )
                         <?php
-                    } ?>
+                    }
+                    ?>
                 });
 
                 let xendit_connect_button = $('#woocommerce_xendit_connect_button');
@@ -957,6 +964,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
 
         echo $return;
     }
+
     public function get_success_redirect_url($order): string
     {
         $returnUrl = $this->get_return_url($order);
@@ -1411,7 +1419,22 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                 return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Touch \'N Go');
             case 'WECHATPAY':
                 return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'WechatPay');
-
+            case 'DD_BAY_MB':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Bank of Ayudhya (BAY)');
+            case 'DD_BBL_MB':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Bangkok Bank (BBL)');
+            case 'DD_KBANK_MB':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Kasikorn Bank (KBank)');
+            case 'DD_KTB_MB':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'KrungThai Bank (KTB)');
+            case 'DD_SCB_MB':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'Siam Commercial Bank (SCB)');
+            case 'LINEPAY':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'LINE Pay');
+            case 'PROMPTPAY':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'PromptPay');
+            case 'TRUEMONEY':
+                return sprintf(wp_kses(__('Pay with your %1$s account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), 'TrueMoney');    
             default:
                 return sprintf(wp_kses(__('Pay with bank transfer %1$s or virtual account via <strong>Xendit</strong>', 'woocommerce-xendit'), ['strong' => []]), $this->method_code);
         }
@@ -1805,7 +1828,30 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
             case 'WECHATPAY':
                 $xendit = new WC_Xendit_Wechatpay();
                 break;
-
+            case 'DD_BAY_MB':
+                $xendit = new WC_Xendit_DD_Bay_Mb();
+                break;
+            case 'DD_BBL_MB':
+                $xendit = new WC_Xendit_DD_Bbl_Mb();
+                break;
+            case 'DD_KBANK_MB':
+                $xendit = new WC_Xendit_DD_Kbank_Mb();
+                break;
+            case 'DD_KTB_MB':
+                $xendit = new WC_Xendit_DD_Ktb_Mb();
+                break;
+            case 'DD_SCB_MB':
+                $xendit = new WC_Xendit_DD_Scb_Mb();
+                break;
+            case 'LINEPAY':
+                $xendit = new WC_Xendit_Linepay();
+                break;
+            case 'PROMPTPAY':
+                $xendit = new WC_Xendit_Promptpay();
+                break;
+            case 'TRUEMONEY':
+                $xendit = new WC_Xendit_Truemoney();
+                break;
             default:
                 return false;
         }
@@ -1868,8 +1914,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
 
         $canceled_order = $wpdb->get_col(
             $wpdb->prepare(
-                // @codingStandardsIgnoreStart
-                "SELECT posts.ID
+				// @codingStandardsIgnoreStart
+				"SELECT posts.ID
 				FROM {$wpdb->posts} AS posts
                 LEFT JOIN {$wpdb->postmeta} AS pm_expired
                     ON posts.ID = pm_expired.post_id
@@ -1877,16 +1923,16 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                 LEFT JOIN {$wpdb->postmeta} AS pm_method
                     ON posts.ID = pm_method.post_id
                         AND pm_method.meta_key = '_payment_method'
-				WHERE posts.post_type IN ('" . implode("','", wc_get_order_types()) . "')
+				WHERE posts.post_type IN ('" . implode( "','", wc_get_order_types() ) . "')
                     AND posts.post_status = 'wc-cancelled'
                     AND `pm_method`.`meta_value` LIKE 'xendit_%'
                     AND pm_expired.meta_id IS NULL"
-            )
-        );
+			)
+		);
 
         if ($canceled_order) {
             foreach ($canceled_order as $cancel_order) {
-                $order = wc_get_order($cancel_order);
+                $order = wc_get_order( $cancel_order );
                 $xendit_invoice_expired = $order->get_meta('Xendit_invoice_expired');
                 $xendit_invoice_id = $order->get_meta('Xendit_invoice');
                 if (empty($xendit_invoice_expired)) {

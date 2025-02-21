@@ -12,6 +12,8 @@ class WC_Xendit_Shopeepay extends WC_Xendit_Invoice
     const DEFAULT_MINIMUM_AMOUNT_PH = 1;
     const DEFAULT_MINIMUM_AMOUNT_MY = 1;
     const DEFAULT_MAXIMUM_AMOUNT_MY = 4999;
+    const DEFAULT_MINIMUM_AMOUNT_TH = 1;
+    const DEFAULT_MAXIMUM_AMOUNT_TH = 200000;
 
     const XENDIT_METHOD_CODE = 'shopeepay';
 
@@ -41,6 +43,9 @@ class WC_Xendit_Shopeepay extends WC_Xendit_Invoice
         } else  if (get_woocommerce_currency() === 'PHP') {
             $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT_PH;
             $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT_PH;
+        } else if (get_woocommerce_currency() === 'THB') {
+            $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT_TH;
+            $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT_TH;
         } else {
             $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT;
             $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT;
