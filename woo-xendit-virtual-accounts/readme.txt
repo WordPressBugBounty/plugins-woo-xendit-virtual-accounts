@@ -3,8 +3,8 @@ Contributors: tpixendit
 Donate link: #
 Tags: xendit, woocommerce, payment gateway, payment, southeast asia
 Requires at least: 4.9.16
-Tested up to: 6.6
-Stable tag: 5.1.7
+Tested up to: 6.8
+Stable tag: 5.1.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,11 @@ To enrich the eCommerce experience, Xendit-WooCommerce plugin allows secure onli
 8. Adjust your settings and save. You can see the new payment options by viewing your WooCommerce checkout page while you have items in the cart.
 
 == Changelog ==
+= 5.1.8 =
+- New Feature: Added support for Sequential Order Number Plugin.
+- Users can now sync between order number set in plugin Sequential Order Number for WooCommerce.
+- Tested until wordpress 6.8 and woocommerce 9.8
+
 = 5.1.7 =
 - New Feature: Added support for a new payment method accepting THB (Thai Baht).
 - Users can now make payments in THB through supported gateways, including local banks through direct debit, QR code payments and Ewallets.

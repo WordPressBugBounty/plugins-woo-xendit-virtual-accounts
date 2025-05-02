@@ -7,12 +7,12 @@ if (!defined('ABSPATH')) {
 Plugin Name: Woocommerce - Xendit
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 5.1.7
+Version: 5.1.8
 Author: Xendit
 Author URI: https://www.xendit.co/
 */
 
-define('WC_XENDIT_PG_VERSION', '5.1.7');
+define('WC_XENDIT_PG_VERSION', '5.1.8');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
@@ -576,12 +576,33 @@ function woocommerce_xendit_pg_init()
 
                 $identifier = $response->external_id;
 
+                $order = false;
                 if (($_SERVER["REQUEST_METHOD"] === "POST")) {
                     if ($identifier) {
                         $exploded_ext_id = explode("-", $identifier);
                         $order_id = end($exploded_ext_id);
-                        $order = new WC_Order($order_id);
 
+                        if (WC_Xendit_PG_Helper::is_advanced_order_number_active()) {
+                            // 1. Try direct meta query
+                            $orders = wc_get_orders(array(
+                                'meta_key' => '_order_number',
+                                'meta_value' => $order_id,
+                                'limit' => 1
+                            ));
+                            
+                            if (!empty($orders)) {
+                                $order = $orders[0];
+                                $order_id = $order->id;
+                            }
+
+                            if (!$order || !$order instanceof WC_Order) {
+                                header('HTTP/1.1 404 Order Not Found');
+                                echo 'Order not found';
+                                exit;
+                            }
+                        }
+
+                        $order = new WC_Order($order_id);
                         if (!$order->is_paid()) {
                             $xendit->validate_payment($response);
                         } else {

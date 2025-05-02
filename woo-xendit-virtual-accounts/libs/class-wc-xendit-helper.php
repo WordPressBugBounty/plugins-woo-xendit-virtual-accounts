@@ -336,14 +336,21 @@ final class WC_Xendit_PG_Helper
     public static function generate_invoice_description(WC_Order $order): string
     {
         $blog_name = html_entity_decode(get_option('blogname'), ENT_QUOTES | ENT_HTML5);
+        $identifier = $order->get_id();
+
+        if (self::is_advanced_order_number_active()) {
+            if (method_exists($order, 'get_order_number')) {
+                $identifier = $order->get_order_number();
+            }
+        }
 
         // Return deposit description
         if (self::is_deposit_order($order) && !empty($order->get_parent_id())) {
             $parent = wc_get_order($order->get_parent_id());
-            return sprintf('Partial Payment for order #%s at %s', $parent->get_order_number(), $blog_name);
+            return sprintf('Partial Payment for order #%s at %s', $identifier, $blog_name);
         }
 
-        return sprintf("Payment for Order #%s at %s", $order->get_id(), $blog_name);
+        return sprintf("Payment for Order #%s at %s", $identifier, $blog_name);
     }
 
     /**
@@ -355,6 +362,31 @@ final class WC_Xendit_PG_Helper
      */
     public static function generate_external_id(WC_Order $order, $external_id_format): string
     {
-        return sprintf('%s-%s', $external_id_format, $order->get_id());
+        $identifier = $order->get_id();
+        if (self::is_advanced_order_number_active()) {
+            if (method_exists($order, 'get_order_number')) {
+                $identifier = $order->get_order_number();
+            }
+        }
+        return sprintf('%s-%s', $external_id_format, $identifier);
+    }
+
+    /**
+     * Check if Advanced Order Number plugin is active and class exists
+     * 
+     * @return bool
+     */
+    public static function is_advanced_order_number_active(): bool
+    {
+        if (!class_exists('Wt_Advanced_Order_Number')) {
+            return false;
+        }
+    
+        // Check if plugin is actually active in WordPress
+        if (!in_array('wt-woocommerce-sequential-order-numbers/wt-advanced-order-number.php', apply_filters('active_plugins', get_option('active_plugins')))) {
+            return false;
+        }
+    
+        return true;
     }
 }

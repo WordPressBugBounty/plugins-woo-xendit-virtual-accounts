@@ -1136,6 +1136,20 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                 $order_num = end($exploded_ext_id);
             }
 
+            if (WC_Xendit_PG_Helper::is_advanced_order_number_active()) {
+                // 1. Try direct meta query
+                $orders = wc_get_orders(array(
+                    'meta_key' => '_order_number',
+                    'meta_value' => $order_num,
+                    'limit' => 1
+                ));
+                
+                if (!empty($orders)) {
+                    $order = $orders[0];
+                    $order_num = $order->id;
+                }
+            }
+
             $order = wc_get_order($order_num);
             $order_id = $order->get_id();
 
