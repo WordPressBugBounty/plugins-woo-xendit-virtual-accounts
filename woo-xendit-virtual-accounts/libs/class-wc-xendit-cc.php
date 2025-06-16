@@ -149,7 +149,8 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         'VND',
         'MYR',
         'THB',
-        'USD'
+        'USD',
+        'SGD'
     );
 
     /**

@@ -31,6 +31,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         'MYR',
         'THB',
         'VND',
+        'SGD'
     );
 
     /** @var string $developmentmode */

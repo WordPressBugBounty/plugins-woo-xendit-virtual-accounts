@@ -4,7 +4,7 @@ Donate link: #
 Tags: xendit, woocommerce, payment gateway, payment, southeast asia
 Requires at least: 4.9.16
 Tested up to: 6.8
-Stable tag: 5.1.8
+Stable tag: 5.1.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,9 @@ To enrich the eCommerce experience, Xendit-WooCommerce plugin allows secure onli
 8. Adjust your settings and save. You can see the new payment options by viewing your WooCommerce checkout page while you have items in the cart.
 
 == Changelog ==
+= 5.1.9 =
+- New Feature: Added supported currency for SGD
+
 = 5.1.8 =
 - New Feature: Added support for Sequential Order Number Plugin.
 - Users can now sync between order number set in plugin Sequential Order Number for WooCommerce.
