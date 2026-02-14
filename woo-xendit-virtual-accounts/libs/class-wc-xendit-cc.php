@@ -166,8 +166,9 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
     {
         $this->id = 'xendit_cc';
         $this->method_code = self::XENDIT_METHOD_CODE;
-        $this->method_title = __('Xendit Credit Card', 'woocommerce-xendit');
-        $this->method_description = sprintf(wp_kses(__('Collect payment from %1$s on checkout page and get the report realtime on your Xendit Dashboard. <a href=\"%2$s\" target=\"_blank\">Sign In</a> or <a href=\"%3$s\" target=\"_blank\">sign up</a> on Xendit and integrate with your <a href=\"%4$s\" target=\"_blank\">Xendit keys</a>', 'woocommerce-xendit'), ['a' => ['href' => true, 'target' => true]]), 'Credit Cards', 'https://dashboard.xendit.co/auth/login', 'https://dashboard.xendit.co/register', 'https://dashboard.xendit.co/settings/developers#api-keys');
+        $this->method_title = __('Xendit Credit Card', 'woo-xendit-virtual-accounts');
+        // translators: %1s: Credit Card.
+        $this->method_description = sprintf(wp_kses(__('Collect payment from %1$s on checkout page and get the report realtime on your Xendit Dashboard. <a href="%2$s" target="_blank">Sign In</a> or <a href="%3$s" target="_blank">sign up</a> on Xendit and integrate with your <a href="%4$s" target="_blank">Xendit keys</a>', 'woo-xendit-virtual-accounts'), ['a' => ['href' => true, 'target' => true]]), 'Credit Card', 'https://dashboard.xendit.co/auth/login', 'https://dashboard.xendit.co/register', 'https://dashboard.xendit.co/settings/developers#api-keys');
         $this->has_fields = true;
         $this->view_transaction_url = 'https://dashboard.xendit.co/dashboard/credit_cards';
         $this->supports = array(
@@ -194,8 +195,8 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         $this->init_settings();
 
         // Get setting values.
-        $this->title = !empty($this->get_option('channel_name')) ? $this->get_option('channel_name') : $this->default_title;
-        $this->description = !empty($this->get_option('payment_description')) ? nl2br($this->get_option('payment_description')) : esc_html(__('Pay with your credit card via Xendit', 'woocommerce-xendit'));
+        $this->title = $this->get_xendit_title();
+        $this->description = $this->get_xendit_description();
 
         $main_settings = get_option('woocommerce_xendit_gateway_settings');
         $this->developmentmode = $main_settings['developmentmode'] ?? '';
@@ -216,11 +217,11 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         $this->publishable_key = $this->testmode ? ($main_settings['api_key_dev'] ?? '') : ($main_settings['api_key'] ?? '');
 
         if ($this->xendit_checkout) {
-            $this->order_button_text = __('Continue to payment', 'woocommerce-gateway-xendit');
+            $this->order_button_text = 'Continue to payment';
         }
 
         if ($this->testmode) {
-            $this->description .= '<br/><br/>' . '<p style="color: red; font-size:80%; margin-top:10px;">' . wp_kses(__('<strong>TEST MODE</strong> - Real payment will not be detected', 'woocommerce-xendit'), ['strong' => []]) . '</p>' . '<br/><br/>';
+            $this->description .= '<br/><br/>' . '<p style="color: red; font-size:80%; margin-top:10px;">' . wp_kses(__('<strong>TEST MODE</strong> - Real payment will not be detected', 'woo-xendit-virtual-accounts'), ['strong' => []]) . '</p>' . '<br/><br/>';
             $this->description = trim($this->description);
         }
 
@@ -248,6 +249,14 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
             self::$_instance = new self();
         }
         return self::$_instance;
+    }
+
+    public function get_xendit_title() {
+        return !empty($this->get_option('channel_name')) ? $this->get_option('channel_name') : $this->method_title;
+    }
+
+    public function get_xendit_description() {
+        return !empty($this->get_option('payment_description')) ? nl2br($this->get_option('payment_description')) : esc_html(__('Pay with your credit card via Xendit', 'woo-xendit-virtual-accounts'));
     }
 
     /**
@@ -361,8 +370,8 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         ?>
         <script>
             jQuery(document).ready(function ($) {
-                $('.channel-name-format').text('<?=$this->title;?>');
-                $('#woocommerce_<?=$this->id;?>_channel_name').change(
+                $('.channel-name-format').text('<?php echo esc_html($this->title);?>');
+                $('#woocommerce_<?php echo esc_html($this->id);?>_channel_name').change(
                     function () {
                         $('.channel-name-format').text($(this).val());
                     }
@@ -378,7 +387,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
 
                     e.preventDefault();
 
-                    var paymentDescription = $('#woocommerce_<?=$this->id;?>_payment_description').val();
+                    var paymentDescription = $('#woocommerce_<?php echo esc_html($this->id);?>_payment_description').val();
                     if (paymentDescription.length > 250) {
                         return new swal({
                             text: 'Text is too long, please reduce the message and ensure that the length of the character is less than 250.',
@@ -405,7 +414,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
      */
     public function init_form_fields()
     {
-        $this->form_fields = require(WC_XENDIT_PG_PLUGIN_PATH . '/libs/forms/wc-xendit-cc-settings.php');
+        $this->form_fields = require(WC_XENDIT_PG_PLUGIN_PATH . '/libs/settings/wc-xendit-cc-settings.php');
     }
 
     /**
@@ -418,7 +427,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         $this->set_subscription_items();
 
         if (!$this->show_add_new_card()) {
-            echo apply_filters('wc_xendit_description', wpautop(wp_kses_post($this->description)));
+            echo esc_html(apply_filters('wc_xendit_description', wpautop(wp_kses_post( $this->description))));
             return;
         }
 
@@ -441,7 +450,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         }
 
         echo '<div
-                id="xendit-payment-cc-data"
+                id="woo-xendit-virtual-accounts-cc-data"
                 data-description=""
                 data-email="' . esc_attr($user_email) . '"
                 data-amount="' . esc_attr($total) . '"
@@ -452,7 +461,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
                 data-allow-remember-me="' . esc_attr($this->saved_cards ? 'true' : 'false') . '">';
 
         if ($this->description && !is_add_payment_method_page()) {
-            echo apply_filters('wc_xendit_description', wpautop(wp_kses_post($this->description)));
+            echo esc_html(apply_filters('wc_xendit_description', wpautop(wp_kses_post( $this->description))));
         }
 
         if ($display_tokenization) {
@@ -481,11 +490,11 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
     public function get_frontend_error_message()
     {
         return apply_filters('wc_xendit_localized_messages', array(
-                'invalid_number' => __('Invalid Card Number. Please make sure the card number is correct. Code: 200030', 'woocommerce-gateway-xendit'),
-                'invalid_expiry' => __('The card expiry that you entered does not meet the expected format. Please try again by entering the 2 digits of the month (MM) and the last 2 digits of the year (YY). Code: 200031', 'woocommerce-gateway-xendit'),
-                'invalid_cvc' => __('The CVC that you entered is less than 3 digits. Please enter the correct value and try again. Code: 200032', 'woocommerce-gateway-xendit'),
-                'incorrect_number' => __('The card number that you entered must be 16 digits long. Please re-enter the correct card number and try again. Code: 200033', 'woocommerce-gateway-xendit'),
-                'missing_card_information' => __('Card information is incomplete. Please complete it and try again. Code: 200034', 'woocommerce-gateway-xendit'),
+                'invalid_number' => 'Invalid Card Number. Please make sure the card number is correct. Code: 200030',
+                'invalid_expiry' => 'The card expiry that you entered does not meet the expected format. Please try again by entering the 2 digits of the month (MM) and the last 2 digits of the year (YY). Code: 200031',
+                'invalid_cvc' => 'The CVC that you entered is less than 3 digits. Please enter the correct value and try again. Code: 200032',
+                'incorrect_number' => 'The card number that you entered must be 16 digits long. Please re-enter the correct card number and try again. Code: 200033',
+                'missing_card_information' => 'Card information is incomplete. Please complete it and try again. Code: 200034',
         ));
     }
 
@@ -520,8 +529,8 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
 
         $this->set_subscription_items();
         if ($this->show_add_new_card()) {
-            wp_enqueue_script('xendit', 'https://js.xendit.co/v1/xendit.min.js', '', WC_XENDIT_PG_VERSION, true);
-            wp_enqueue_script('woocommerce_' . $this->id, plugins_url('assets/js/frontend/xendit.min.js', WC_XENDIT_PG_MAIN_FILE), array('jquery', 'xendit'), WC_XENDIT_PG_VERSION, true);
+            wp_enqueue_script('xendit', plugins_url('assets/js/frontend/xendit.min.js', WC_XENDIT_PG_MAIN_FILE), '', WC_XENDIT_PG_VERSION, true);
+            wp_enqueue_script('woocommerce_' . $this->id, plugins_url('assets/js/frontend/xendit-card.min.js', WC_XENDIT_PG_MAIN_FILE), array('jquery', 'xendit'), WC_XENDIT_PG_VERSION, true);
 
             $this->generate_xendit_params();
         }
@@ -571,7 +580,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
      */
     public function add_payment_method()
     {
-        $error_msg = __('There was a problem adding the payment method.', 'woocommerce-gateway-xendit');
+        $error_msg = 'There was a problem adding the payment method.';
 
         /*
          * Check if it has error while changing payment method
@@ -737,7 +746,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
             // associates payment token with WP user_id
             if (!$token || $token->get_user_id() !== get_current_user_id()) {
                 WC()->session->set('refresh_totals', true);
-                throw new Exception(__('Invalid payment method. Please input a new card number. Code: 200036', 'woocommerce-gateway-xendit'));
+                throw new Exception('Invalid payment method. Please input a new card number. Code: 200036');
             }
 
             $xendit_source = $token->get_token();
@@ -778,7 +787,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
     public function process_change_subscription_payment_method($order_id)
     {
         try {
-            $error_msg = __('We encountered an issue while processing the checkout. Please contact us. Code: 200018', 'woocommerce-gateway-xendit');
+            $error_msg = 'We encountered an issue while processing the checkout. Please contact us. Code: 200018';
             $subscription = wc_get_order($order_id);
 
             /*
@@ -852,7 +861,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         try {
             // Check the 3ds authentication status
             if (isset($_POST['xendit_3ds_authentication_status']) && $_POST['xendit_3ds_authentication_status'] == 0) {
-                throw new Exception(__("The 3DS authentication failed. Please try again.", "woocommerce-gateway-xendit"));
+                throw new Exception('The 3DS authentication failed. Please try again.');
             }
 
             // Update payment method for subscription
@@ -869,7 +878,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
                     $xendit_failure_reason = wc_clean($_POST['xendit_failure_reason']);
                     $order->add_order_note('Checkout with credit card unsuccessful. Reason: ' . $xendit_failure_reason);
 
-                    throw new Exception(__($xendit_failure_reason, 'woocommerce-gateway-xendit'));
+                    throw new Exception($xendit_failure_reason);
                 }
 
                 // If using saved card
@@ -879,7 +888,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
                     $xendit_token = $token->get_token();
 
                     if (!$xendit_token) {
-                        $error_msg = __('We encountered an issue while processing the checkout. Please contact us. Code: 200018', 'woocommerce-gateway-xendit');
+                        $error_msg = 'We encountered an issue while processing the checkout. Please contact us. Code: 200018';
                         throw new Exception($error_msg);
                     }
 
@@ -911,7 +920,11 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
                     'error_message' => $e->getMessage()
             ));
             $this->xenditClass->trackMetricCount($metrics);
-            return;
+
+            return array(
+                'result' => 'failure',
+                'message' => $e->getMessage()
+            );
         }
     }
 
@@ -933,8 +946,12 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         $payer_email = !empty($order->get_billing_email()) ? $order->get_billing_email() : 'noreply@mail.com';
         $payment_gateway = wc_get_payment_gateway_by_order($order_id);
 
+        // How likely this condition below will happened?
         if ($payment_gateway->id != $this->id) {
-            return;
+            return array(
+                'result' => 'failure',
+                'message' => 'Can\'t proceed the order with '.$payment_gateway->id,
+            );
         }
 
         $invoice = $order->get_meta('Xendit_invoice');
@@ -988,11 +1005,14 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
             $message = $this->get_localized_error_message($response['error_code'], $response['message']);
             $order->add_order_note('Checkout with invoice unsuccessful. Reason: ' . $message);
 
-            throw new Exception($message);
+            throw new Exception(esc_html($message));
         }
 
         if ($response['status'] == 'PAID' || $response['status'] == 'COMPLETED') {
-            return;
+            return array(
+                'result' => 'failure',
+                'message' => 'Order is already paid',
+            );
         }
 
         $xendit_invoice_url = esc_attr($response['invoice_url'] . '#' . $this->method_code);
@@ -1059,7 +1079,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
 
                 // If token not found
                 if ($response['error_code'] == 'TOKEN_NOT_FOUND_ERROR') {
-                    throw new Exception(__('There was an error processing your card details, please enter another card and try again', 'woocommerce-gateway-xendit'));
+                    throw new Exception('There was an error processing your card details, please enter another card and try again');
                 }
             }
 
@@ -1093,7 +1113,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
             $this->xenditClass->trackMetricCount($metrics);
 
             if ($e instanceof Exception) {
-                throw new Exception($e->getMessage());
+                throw new Exception(esc_html($e->getMessage()));
             }
         }
     }
@@ -1113,7 +1133,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
             $message = isset($localized_messages[$response->get_error_code()]) ? $localized_messages[$response->get_error_code()] : $response->get_error_message();
             $order->add_order_note('Card charge error. Reason: ' . $message);
 
-            throw new Exception($message);
+            throw new Exception(esc_html($message));
         }
 
         if (!empty($response['error_code'])) {
@@ -1121,19 +1141,19 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
             $message = $this->get_localized_error_message($response['error_code'], $response['message']);
             $order->add_order_note('Card charge error. Reason: ' . $message);
 
-            throw new Exception($message);
+            throw new Exception(esc_html($message));
         }
 
         if (empty($response['id'])) { //for merchant who uses old API version
-            throw new Exception($this->generic_error_message . 'Code: 200040');
+            throw new Exception( esc_html($this->generic_error_message . 'Code: 200040'));
         }
 
         if ($response['status'] !== 'CAPTURED') {
-            $order->update_status('failed', sprintf(__('Xendit charges (Charge ID:' . $response['id'] . ').', 'woocommerce-xendit'), $response['id']));
+            $order->update_status('failed', sprintf("Xendit charges (Charge ID: %1s).", $response['id']));
             $message = $this->get_localized_error_message($response['failure_reason']);
             $order->add_order_note('Card charge error. Reason: ' . $message);
 
-            throw new Exception($message);
+            throw new Exception(esc_html($message));
         }
 
         // Store other data such as fees
@@ -1267,7 +1287,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
 
                 return false;
             } elseif (!empty($response['id'])) {
-                $refund_message = sprintf(__('Refunded %1$s - Refund ID: %2$s - Reason: %3$s', 'woocommerce-xendit'), wc_price($response['amount']), $response['id'], $reason);
+                $refund_message = sprintf('Refunded %1$s - Refund ID: %2$s - Reason: %3$s', wc_price($response['amount']), $response['id'], $reason);
                 $order->add_order_note($refund_message);
 
                 return true;
@@ -1322,6 +1342,11 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         }
 
         if ($this->xenditClass->isCredentialExist() == false) {
+            unset($gateways[$this->id]);
+            return $gateways;
+        }
+
+        if (!WC_Xendit_PG_Helper::is_cart_contain_subscription_items()) {
             unset($gateways[$this->id]);
             return $gateways;
         }
@@ -1431,7 +1456,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
             $order->update_meta_data('_xendit_charge_captured', 'yes');
             $order->save();
 
-            $message = sprintf(__('Xendit charge complete (Charge ID: %s)', 'woocommerce-xendit'), $charge_id);
+            $message = sprintf('Xendit charge complete (Charge ID: %s)', $charge_id);
             $order->add_order_note($message);
 
             // Add token to subscription
@@ -1484,7 +1509,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
                 $charge = $this->xenditClass->getCharge($response->credit_card_charge_id);
                 if (!empty($charge['error_code'])) {
                     header('HTTP/1.1 400 Invalid Credit Card Charge Data Received');
-                    echo 'Error in getting credit card charge. Error code: ' . $charge['error_code'];
+                    echo esc_html('Error in getting credit card charge. Error code: ' . $charge['error_code']);
                     exit;
                 }
 
@@ -1504,7 +1529,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
                         $cardToken = $this->xenditClass->getCCToken($response->credit_card_token);
                         if (!empty($cardToken['error_code'])) {
                             header('HTTP/1.1 400 Invalid Credit Card Token Data Received');
-                            echo 'Error in getting credit card token. Error code: ' . $charge['error_code'];
+                            echo esc_html('Error in getting credit card token. Error code: ' . $charge['error_code']);
                             exit;
                         }
 
@@ -1531,7 +1556,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
                     if (empty($order->get_meta('Xendit_invoice_expired'))) {
                         $order->add_meta_data('Xendit_invoice_expired', 1);
                     }
-                    $order->update_status('failed', sprintf(__('Xendit charges (Charge ID: %s).', 'woocommerce-xendit'), $charge['id']));
+                    $order->update_status('failed', sprintf('Xendit charges (Charge ID: %s).', $charge['id']));
 
                     $message = $this->get_localized_error_message($charge['failure_reason']);
                     $order->add_order_note($message);
@@ -1545,7 +1570,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
                     );
                     $order->add_order_note("<b>Xendit payment failed.</b><br>" . $notes);
 
-                    die('Credit card charge status is ' . $charge['status']);
+                    die(esc_html('Credit card charge status is ' . $charge['status']));
                 }
             } else {
                 header('HTTP/1.1 400 Invalid Data Received');
@@ -1554,7 +1579,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
             }
         } catch (Exception $e) {
             header('HTTP/1.1 500 Server Error');
-            echo $e->getMessage();
+            echo esc_html($e->getMessage());
             exit;
         }
     }

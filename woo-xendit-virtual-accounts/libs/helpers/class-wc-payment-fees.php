@@ -27,19 +27,19 @@ class WC_Xendit_Payment_Fees
 
         $fees = [
             [
-                'type' => esc_html(__('Discount', 'woocommerce-xendit')),
+                'type' => esc_html('Discount'),
                 'value' => (float) $order->get_discount_total() * -1
             ],
             [
-                'type' => esc_html(__('Shipping fee', 'woocommerce-xendit')),
+                'type' => esc_html('Shipping fee'),
                 'value' => (float) $order->get_shipping_total()
             ],
             [
-                'type' => esc_html(__('Other Fees', 'woocommerce-xendit')),
+                'type' => esc_html('Other Fees'),
                 'value' => self::get_custom_total_fees($order)
             ],
             [
-                'type' => esc_html(__('Tax fee', 'woocommerce-xendit')),
+                'type' => esc_html('Tax fee'),
                 'value' => $order->get_total_tax()
             ]
         ];

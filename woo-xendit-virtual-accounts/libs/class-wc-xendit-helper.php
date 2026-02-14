@@ -288,7 +288,7 @@ final class WC_Xendit_PG_Helper
         global $wc_xendit_pg;
         $payment_methods = [];
 
-        $xendit_payments = $wc_xendit_pg->woocommerce_xendit_payment_settings();
+        $xendit_payments = $wc_xendit_pg->xendit_payment_gateway_settings();
         foreach ($xendit_payments as $payment_class) {
             // WC_Xendit_CC_Addons used for subscription
             // but the main class is WC_Xendit_CC
@@ -388,5 +388,22 @@ final class WC_Xendit_PG_Helper
         }
     
         return true;
+    }
+
+    /**
+     * Check if cart has subscription items
+     * @return int
+     */
+    public static function is_cart_contain_subscription_items()
+    {
+        global $woocommerce;
+
+        foreach ($woocommerce->cart->get_cart() as $cart_item) {
+            if (in_array($cart_item['data']->get_type(), ['subscription', 'subscription_variation'])) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

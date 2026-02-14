@@ -1,10 +1,9 @@
-=== Woocommerce – Xendit ===
+=== Xendit Payment ===
 Contributors: tpixendit
-Donate link: #
-Tags: xendit, woocommerce, payment gateway, payment, southeast asia
-Requires at least: 4.9.16
-Tested up to: 6.8
-Stable tag: 5.1.9
+Tags: xendit, payment, payment gateway, payment, southeast asia
+Requires at least: 4.9
+Tested up to: 6.9
+Stable tag: 6.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +51,23 @@ To enrich the eCommerce experience, Xendit-WooCommerce plugin allows secure onli
 8. Adjust your settings and save. You can see the new payment options by viewing your WooCommerce checkout page while you have items in the cart.
 
 == Changelog ==
+= 6.1.0 =
+- Breaking Changes: add verification mechanism for payload signature
+
+= 6.0.2 =
+- Bugfix: remove validation when checking the gateway status logic in manual renewal subscription
+- Bugfix: fix redirection issue in subscription
+- Cleanup folder structure
+
+= 6.0.1 =
+- Bugfix: Change checkout minimum amount for order to 1
+
+= 6.0.0 =
+- Breaking Change: Unified all payment channels into one
+
+= 5.1.10 =
+- Fix: Remove supported currency check in gateway validation
+
 = 5.1.9 =
 - New Feature: Added supported currency for SGD
 

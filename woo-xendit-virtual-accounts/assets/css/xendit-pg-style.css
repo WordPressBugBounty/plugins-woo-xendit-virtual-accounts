@@ -101,8 +101,32 @@
 .xendit-gateway-payment-label .xendit-cc-icons {
     max-width: 100%;
 }
-.xendit-gateway-payment-description.test-description {
+
+.xendit-gateway-payment-description {
+    margin-top: 5px;
+    padding-bottom: 10px;
+}
+
+.test-description {
     color: red;
     font-size:80%;
-    margin-top:10px;
+}
+
+#radio-control-wc-payment-method-options-xendit_gateway__label {
+    justify-content: space-between;
+}
+
+#radio-control-wc-payment-method-options-xendit_cc__label {
+    justify-content: space-between;
+}
+
+.xendit-gateway-title {
+    width: 100%;
+}
+
+.wc-block-components-radio-control__label>.xendit-gateway-title>.xendit-gateway-icon {
+    float: right;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

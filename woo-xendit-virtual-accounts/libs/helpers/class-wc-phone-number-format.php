@@ -247,7 +247,7 @@ class WC_Xendit_Phone_Number_Format
         if (empty($countryCode)) {
             return '';
         }
-        return self::COUNTRY_CODE_PHONE_MAPPING[$countryCode] ?: '';
+        return self::COUNTRY_CODE_PHONE_MAPPING[$countryCode] ?? '';
     }
 
     /**

@@ -9,7 +9,7 @@ class WC_Xendit_PG_API
     const DEFAULT_TIME_OUT = 70;
 
     /** @var string $tpi_gateway_domain */
-    protected $tpi_gateway_domain = 'https://tpi-gateway.xendit.co';
+    protected $tpi_gateway_domain = '';
 
     /** @var mixed|string $developmentmode */
     protected $developmentmode = '';
@@ -43,6 +43,7 @@ class WC_Xendit_PG_API
      */
     public function __construct()
     {
+        $this->tpi_gateway_domain = $this->get_tpi_gateway_domain_url();
         $main_settings = get_option('woocommerce_xendit_gateway_settings');
         $this->developmentmode = $main_settings['developmentmode'] ?? '';
 
@@ -75,6 +76,16 @@ class WC_Xendit_PG_API
     }
 
     /**
+     * Return url for tpi gateway domain API
+     * @return string
+     */
+    public function get_tpi_gateway_domain_url() {
+        return XENDIT_ENV == 'staging'
+            ? XENDIT_TPI_GATEWAY_URL_STAGING
+            : XENDIT_TPI_GATEWAY_URL_PRODUCTION;
+    }
+
+    /**
      * @param $body
      * @param $header
      * @return mixed
@@ -102,7 +113,7 @@ class WC_Xendit_PG_API
             $this->handleNetworkError($response);
             return json_decode($response['body'], true);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception(esc_html($e->getMessage()));
         }
     }
 
@@ -125,7 +136,7 @@ class WC_Xendit_PG_API
             $this->handleNetworkError($response);
             return json_decode($response['body'], true);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception(esc_html($e->getMessage()));
         }
     }
 
@@ -155,7 +166,7 @@ class WC_Xendit_PG_API
             $this->handleNetworkError($response);
             return json_decode($response['body'], true);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception(esc_html($e->getMessage()));
         }
     }
 
@@ -251,7 +262,7 @@ class WC_Xendit_PG_API
             $this->handleNetworkError($response);
             return json_decode($response['body'], true);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception(esc_html($e->getMessage()));
         }
     }
 
@@ -276,7 +287,7 @@ class WC_Xendit_PG_API
             $this->handleNetworkError($response);
             return json_decode($response['body'], true);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception(esc_html($e->getMessage()));
         }
     }
 
@@ -301,7 +312,7 @@ class WC_Xendit_PG_API
             $this->handleNetworkError($response);
             return json_decode($response['body'], true);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception(esc_html($e->getMessage()));
         }
     }
 
@@ -495,7 +506,7 @@ class WC_Xendit_PG_API
                 throw new Exception(json_encode($jsonResponse));
             }
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception(esc_html($e->getMessage()));
         }
 
         return $jsonResponse;
@@ -521,7 +532,7 @@ class WC_Xendit_PG_API
             $this->handleNetworkError($response);
             return json_decode($response['body'], true);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception(esc_html($e->getMessage()));
         }
     }
 
@@ -531,9 +542,9 @@ class WC_Xendit_PG_API
      */
     public function uninstallApp()
     {
-        $app_id = '61e12bf5bfd5ff82ab9d6d15';
-        if ($this->tpi_gateway_domain !== 'https://tpi-gateway.xendit.co') {
-            $app_id = '61e128c1aa83ae905b6ab45a';
+        $app_id = XENDIT_INTEGRATION_APP_ID_PRODUCTION;
+        if (XENDIT_ENV == 'staging') {
+            $app_id = XENDIT_INTEGRATION_APP_ID_STAGING;
         }
 
         $end_point = $this->tpi_gateway_domain.'/tpi/marketplace/integrations/'.$app_id.'/uninstall';
@@ -549,7 +560,7 @@ class WC_Xendit_PG_API
             $this->handleNetworkError($response);
             return json_decode($response['body'], true);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception(esc_html($e->getMessage()));
         }
     }
 

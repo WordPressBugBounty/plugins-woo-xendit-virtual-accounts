@@ -1,0 +1,16 @@
+<?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+define('XENDIT_ENV', 'production');
+define("XENDIT_TPI_GATEWAY_URL_PRODUCTION", "https://tpi-gateway.xendit.co");
+define("XENDIT_DASHBOARD_URL_PRODUCTION", "https://dashboard.xendit.co");
+define("XENDIT_OAUTH_CLIENT_ID_PRODUCTION", "906468d0-fefd-4179-ba4e-407ef194ab85");
+define("XENDIT_OAUTH_REDIRECTION_URL_PATH", "/tpi/authorization/xendit/redirect/v2");
+define("XENDIT_INTEGRATION_APP_ID_PRODUCTION", "61e12bf5bfd5ff82ab9d6d15");
+
+define("INTEGRATION_NOTIFICATION_SIGNATURE_PUBLIC_KEYS", [
+    "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEqaSYgkq632WHte+NOc1QqCbDlYC7sB1tlDUf/8EBDApTwsB5k4pB9h5BDCG/8xOQhwl2dr1nNoOarD4uCNARgByQJ+S91iyfJqLp+JuQF1z3HKu51f1biV80RLqcaTPo\n-----END PUBLIC KEY-----",
+    "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAE5Zg9WXeJw0GbEYZREVI+WOfPE4AbHCN8XfOsPFYge7EOrQsU1Vh24ZLzIOocQbRj76r1Kjp8JCZJM5iT2++RkCmIaY/iV/lxKaOL9/jINMQPqYeKFLbrliCejSEg8EE/\n-----END PUBLIC KEY-----"
+]);

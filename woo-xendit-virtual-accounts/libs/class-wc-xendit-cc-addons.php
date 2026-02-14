@@ -49,7 +49,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     protected function is_subscription($order_id)
     {
-        $this->log('[Method] is_subscription called' . PHP_EOL);
         return ( function_exists('wcs_order_contains_subscription') && ( wcs_order_contains_subscription($order_id) || wcs_is_subscription($order_id) || wcs_order_contains_renewal($order_id) ) );
     }
 
@@ -60,7 +59,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     protected function is_pre_order($order_id)
     {
-        $this->log('[Method] is_pre_order called' . PHP_EOL);
         return ( class_exists('WC_Pre_Orders_Order') && WC_Pre_Orders_Order::order_contains_pre_order($order_id) );
     }
 
@@ -71,13 +69,10 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function process_payment($order_id, bool $retry = true)
     {
-        $this->log('[Method] process_payment called' . PHP_EOL);
         if ($this->is_subscription($order_id)) {
             // Regular payment with force subscription enabled
-            $this->log('this order ' . print_r($order_id, true) . ' is a subscription' . PHP_EOL);
             return parent::process_payment($order_id, true);
         } elseif ($this->is_pre_order($order_id)) {
-            $this->log('this order ' . print_r($order_id, true) . ' is a pre order' . PHP_EOL);
             return $this->process_pre_order($order_id, $retry);
         } else {
             return parent::process_payment($order_id, $retry);
@@ -89,23 +84,19 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     protected function save_source($order, $source)
     {
-        $this->log('[Method] save_source called' . PHP_EOL);
         parent::save_source($order, $source);
 
         $order_id  = $order->get_id();
         // Also store it on the subscriptions being purchased or paid for in the order
         if (function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($order_id)) {
-            $this->log('save_source contains subscription' . PHP_EOL);
             $subscriptions = wcs_get_subscriptions_for_order($order_id);
         } elseif (function_exists('wcs_order_contains_renewal') && wcs_order_contains_renewal($order_id)) {
-            $this->log('save_source contains renewal' . PHP_EOL);
             $subscriptions = wcs_get_subscriptions_for_renewal_order($order_id);
         } else {
             $subscriptions = array();
         }
 
         foreach ($subscriptions as $subscription) {
-            $this->log('first subscription.getID() -> ' . print_r($subscription->get_id(), true) . PHP_EOL);
             $subscription->update_meta_data('_xendit_card_id', $source->source);
         }
     }
@@ -118,23 +109,17 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function process_subscription_payment($order, $amount = 0)
     {
-        $this->log('[Method] process_subscription_payment called' . PHP_EOL);
-
         try {
             // Get source from order
             $response = null;
             $should_use_default_customer_token = false;
             $source = $this->get_order_source($order);
-            $this->log('process_subscription_payment -> get_order_source -> ' . print_r($source, true) . PHP_EOL);
 
             // If subscription token not exists
             // Using customer default token
             if (!empty($source->source)) {
-                $this->log("Info: Begin processing subscription payment for order {$order->get_id()} for the amount of {$amount}");
-
                 // Make the request
                 $request = $this->generate_payment_request($order, $source->source, '', false, true);
-                $this->log('subscription request is -> ' . print_r($request, true));
 
                 $response = $this->xenditClass->createCharge($request);
             } else {
@@ -173,7 +158,7 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
 
             return $response;
         } catch (Exception $e) {
-            return new WP_Error('xendit_error', __($e->getMessage(), 'woocommerce-xendit'));
+            return new WP_Error('xendit_error', $e->getMessage());
         }
     }
 
@@ -184,9 +169,7 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function process_subscription_payment_by_default_token($order)
     {
-        $this->log('[Method] process_subscription_payment_by_default_token called' . PHP_EOL);
-
-        $error_message = __('Process payment by default customer payment failed.', 'woocommerce-gateway-xendit');
+        $error_message = 'Process payment by default customer payment failed.';
         if (empty($order) || empty($order->get_user_id())) {
             return new WP_Error('xendit_error', $error_message);
         }
@@ -203,11 +186,10 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
         }
 
         $request = $this->generate_payment_request($order, $default_token, '', true, true);
-        $this->log('subscription request is -> ' . print_r($request, true));
         $response = $this->xenditClass->createCharge($request);
 
         if (!empty($response['error_code'])) {
-            throw new Exception($this->get_localized_error_message($response['error_code'], $response['message']));
+            throw new Exception( esc_html($this->get_localized_error_message($response['error_code'], $response['message'])));
         }
         return $response;
     }
@@ -222,7 +204,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function process_pre_order($order_id, $retry)
     {
-        $this->log('[Method] process_pre_order called' . PHP_EOL);
         if (WC_Pre_Orders_Order::order_requires_payment_tokenization($order_id)) {
             try {
                 $order = wc_get_order($order_id);
@@ -231,7 +212,7 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
 
                 // We need a source on file to continue.
                 if (empty($source->customer) || empty($source->source)) {
-                    throw new Exception(__('Unable to store payment details. Please try again.', 'woocommerce-gateway-xendit'));
+                    throw new Exception('Unable to store payment details. Please try again.');
                 }
 
                 // Store source to order meta
@@ -264,7 +245,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function process_pre_order_release_payment($order)
     {
-        $this->log('[Method] process_pre_order_release_payment called' . PHP_EOL);
         try {
             // Define some callbacks if the first attempt fails.
             $retry_callbacks = array(
@@ -299,7 +279,7 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
                 }
             }
         } catch (Exception $e) {
-            $order_note = sprintf(__('Xendit Transaction Failed (%s)', 'woocommerce-gateway-xendit'), $e->getMessage());
+            $order_note = sprintf('Xendit Transaction Failed (%s)', $e->getMessage());
 
             // Mark order as failed if not already set,
             // otherwise, make sure we add the order note so we can detect when someone fails to check out multiple times
@@ -317,8 +297,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function delete_resubscribe_meta($resubscribe_order)
     {
-        $this->log('[Method] delete_resubscribe_meta called' . PHP_EOL);
-
         /** @var WC_Order $resubscribe_order */
         $resubscribe_order->delete_meta_data('_xendit_card_id');
         $this->delete_renewal_meta($resubscribe_order);
@@ -330,7 +308,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function delete_renewal_meta($renewal_order)
     {
-        $this->log('[Method] delete_renewal_meta called' . PHP_EOL);
         /** @var WC_Order $renewal_order */
         $renewal_order->delete_meta_data('Xendit Fee');
         $renewal_order->delete_meta_data('Net Revenue From Xendit');
@@ -357,7 +334,7 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
 
         if (false === $subscription) {
             // translators: %d: subscription ID.
-            throw new InvalidArgumentException(sprintf(__('Subscription doesn\'t exist in scheduled action: %d', 'woocommerce-subscriptions'), $subscription_id));
+            throw new InvalidArgumentException( esc_html(sprintf('Subscription doesn\'t exist in scheduled action: %d', $subscription_id)));
         }
 
         if (! $subscription->is_manual() && ! $subscription->has_status(wcs_get_subscription_ended_statuses())) {
@@ -388,11 +365,10 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function scheduled_subscription_payment($amount_to_charge, $renewal_order)
     {
-        $this->log('[Method] scheduled_subscription_payment called. Amount: ' . $amount_to_charge . PHP_EOL);
         $response = $this->process_subscription_payment($renewal_order, $amount_to_charge);
 
         if (is_wp_error($response)) {
-            $renewal_order->update_status('failed', sprintf(__('Xendit Transaction Failed (%s)', 'woocommerce-gateway-xendit'), $response->get_error_message()));
+            $renewal_order->update_status('failed', sprintf('Xendit Transaction Failed (%s)', $response->get_error_message()));
         }
     }
 
@@ -402,7 +378,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function remove_order_source_before_retry($order)
     {
-        $this->log('[Method] remove_order_source_before_retry called' . PHP_EOL);
         /** @var WC_Order $order */
         $order->delete_meta_data('_xendit_card_id');
     }
@@ -413,7 +388,7 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function remove_order_customer_before_retry($order)
     {
-        $this->log('[Method] remove_order_customer_before_retry called' . PHP_EOL);
+        WC_Xendit_PG_Logger::log('[Method] remove_order_customer_before_retry called' . PHP_EOL);
     }
 
     /**
@@ -427,7 +402,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function update_failing_payment_method($subscription, $renewal_order)
     {
-        $this->log('[Method] update_failing_payment_method called' . PHP_EOL);
         $subscription->update_meta_data('_xendit_card_id', $renewal_order->get_meta('_xendit_card_id'));
     }
 
@@ -442,8 +416,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function add_subscription_payment_meta($payment_meta, $subscription)
     {
-        $this->log('[Method] add_subscription_payment_meta called' . PHP_EOL);
-
         // Save xendit card id to order
         $xendit_card_id = $subscription->get_meta('_xendit_card_id');
         if (empty($xendit_card_id) && !empty($subscription->get_parent())) {
@@ -472,11 +444,7 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function validate_subscription_payment_meta($payment_method_id, $payment_meta)
     {
-        $this->log('[Method] validate_subscription_payment_meta called' . PHP_EOL);
         if ($this->id === $payment_method_id) {
-            $this->log('Payment method id sesuai ' . $payment_method_id . PHP_EOL);
-            $this->log('Payment meta ' . print_r($payment_meta, true) . PHP_EOL);
-
             $card_id = $payment_meta['post_meta']['_xendit_card_id']['value'];
             if (! empty($card_id) && strlen($card_id) < 24) {
                 throw new Exception('Invalid card ID. A valid "_xendit_card_id" has 24 characters.');
@@ -494,7 +462,6 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
      */
     public function maybe_render_subscription_payment_method($payment_method_to_display, $subscription)
     {
-        $this->log('[Method] maybe_render_subscription_payment_method called' . PHP_EOL);
         $customer_user = $subscription->get_customer_id();
 
         // bail for other payment methods
@@ -523,12 +490,12 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
             foreach ($cards as $card) {
                 if ($card->id === $xendit_card_id) {
                     $found_card                = true;
-                    $payment_method_to_display = sprintf(__('Via %1$s card ending in %2$s', 'woocommerce-gateway-xendit'), ( isset($card->type) ? $card->type : $card->brand ), $card->last4);
+                    $payment_method_to_display = sprintf('Via %1$s card ending in %2$s', ( isset($card->type) ? $card->type : $card->brand ), $card->last4);
                     break;
                 }
             }
             if (! $found_card) {
-                $payment_method_to_display = sprintf(__('Via %1$s card ending in %2$s', 'woocommerce-gateway-xendit'), ( isset($cards[0]->type) ? $cards[0]->type : $cards[0]->brand ), $cards[0]->last4);
+                $payment_method_to_display = sprintf('Via %1$s card ending in %2$s', ( isset($cards[0]->type) ? $cards[0]->type : $cards[0]->brand ), $cards[0]->last4);
             }
         }
 
@@ -552,32 +519,5 @@ class WC_Xendit_CC_Addons extends WC_Xendit_CC
         if ($order_payment_method === $this->id && isset($available_gateways[ $order_payment_method ])) {
             $subscription->set_payment_method($available_gateways[ $order_payment_method ]);
         }
-    }
-
-    /**
-     * Logs
-     *
-     * @since 3.1.0
-     * @version 3.1.0
-     *
-     * @param string $message
-     */
-    // public function log( $message ) {
-    //  $options = get_option( 'woocommerce_xendit_settings' );
-    //
-    //  if ( 'yes' === $options['logging'] ) {
-    //      WC_Xendit_CC::log( $message );
-    //  }
-    // }
-    public function log($message)
-    {
-        if (!file_exists(dirname(__FILE__).'/log.txt')) {
-            file_put_contents(dirname(__FILE__).'/log.txt', 'Xendit Logs'."\r\n");
-        }
-
-        $debug_log_file_name = dirname(__FILE__) . '/log.txt';
-        $fp = fopen($debug_log_file_name, "a");
-        fwrite($fp, date('d/m/Y h:i:s') . "\r\n" . $message . PHP_EOL);
-        fclose($fp);
     }
 }

@@ -1,14 +1,13 @@
 
-import { sprintf, __ } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 import { registerPaymentMethod } from '@woocommerce/blocks-registry';
-import { decodeEntities, encodeEntities } from '@wordpress/html-entities';
 import parse from "html-react-parser";
 
 const { availableGateways, isLive } = xenditBlockData.gatewayData
 
 const defaultLabel = __(
-    'Xendit Payments',
-    'woocommerce-xendit',
+    'Xendit Payment',
+    'woo-xendit-virtual-accounts',
 );
 
 const label = defaultLabel;
@@ -22,7 +21,26 @@ const label = defaultLabel;
 const Content = ( props ) => {
     const { description, isLive } = props;
     const className = !isLive ? 'test-description' : '';
-    return <div className={ 'xendit-gateway-payment-description ' + className }>{ parse(description) }</div>;
+    const splitDescription = description.split('|');
+    return (
+        <>
+            <div className='xendit-gateway-payment-description'>{ parse(splitDescription[0]) }</div>
+            { !isLive && <TestContent description={splitDescription[1]} className={className} /> }
+        </>
+    );
+};
+
+/**
+ * Content component
+ * @param props
+ * @returns {JSX.Element}
+ * @constructor
+ */
+const TestContent = (props) => {
+    const { description, className } = props;
+    return (
+        <div className={className}>{ parse(description) }</div>
+    );
 };
 
 /**
@@ -33,9 +51,7 @@ const Content = ( props ) => {
  */
 const Label = ( props ) => {
     const { title } = props;
-    return <div
-        className="xendit-gateway-payment-label"
-    >{ parse(title) }</div>;
+    return parse(title);
 }
 
 /**

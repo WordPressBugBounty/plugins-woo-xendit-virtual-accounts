@@ -40,7 +40,7 @@ final class WC_Xendit_Blocks extends AbstractPaymentMethodType
         $this->localize_wc_blocks_data();
 
         if (function_exists('wp_set_script_translations')) {
-            wp_set_script_translations(self::SCRIPT_HANDLER, 'woocommerce-xendit', WC_Xendit_PG::plugin_abspath() . 'languages/');
+            wp_set_script_translations(self::SCRIPT_HANDLER, 'woo-xendit-virtual-accounts', WC_Xendit_PG::plugin_abspath() . 'languages/');
         }
 
         return [ self::SCRIPT_HANDLER ];
@@ -67,7 +67,7 @@ final class WC_Xendit_Blocks extends AbstractPaymentMethodType
     public function generate_description($gateway): string
     {
         if (WC_Xendit_Invoice::instance()->developmentmode === 'yes') {
-            return wp_kses(__('<strong>TEST MODE</strong> - Real payment will not be detected', 'woocommerce-xendit'), ['strong' => []]);
+            return $gateway->description."|".wp_kses(__('<strong>TEST MODE</strong> - Real payment will not be detected', 'woo-xendit-virtual-accounts'), ['strong' => []]);
         }
 
         return $gateway->description;
@@ -93,10 +93,10 @@ final class WC_Xendit_Blocks extends AbstractPaymentMethodType
                 continue;
             }
 
-            $titleMarkup = "<span style='margin-right: 1em'>{$gateway->title}</span>{$gateway->get_icon()}";
+            $titleMarkup = "<span class='xendit-gateway-title'>{$gateway->title}<span class='xendit-gateway-icon'>{$gateway->get_icon()}</span></span>";
             $availablePaymentMethods[] = [
                 'id'          => $gateway->id,
-                'title'       => $gateway->id !== 'xendit_gateway' ? $titleMarkup : 'Xendit',
+                'title'       => $titleMarkup,
                 'description' => $this->generate_description($gateway),
                 'supports'    => array_filter($gateway->supports, [ $gateway, 'supports' ]),
             ];
