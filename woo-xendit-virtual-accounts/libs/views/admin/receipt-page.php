@@ -1,6 +1,4 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
-
 $payment_gateway = wc_get_payment_gateway_by_order($order_id);
 if ($payment_gateway->id != $this->id) {
     return;

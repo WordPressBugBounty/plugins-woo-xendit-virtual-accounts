@@ -1,7 +1,5 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) exit;
-
 /**
  * You only need this file if you are not using composer.
  * Why are you not using composer?

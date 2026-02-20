@@ -1,6 +1,4 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
-
 if (empty($this->is_connected)) {
     return;
 }

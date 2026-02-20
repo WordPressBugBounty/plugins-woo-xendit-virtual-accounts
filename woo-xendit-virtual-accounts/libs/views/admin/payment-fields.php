@@ -1,7 +1,4 @@
 <?php
-
-if ( ! defined( 'ABSPATH' ) ) exit;
-
 if ($this->description) {
     $test_description = '';
     if ($this->developmentmode == 'yes') {

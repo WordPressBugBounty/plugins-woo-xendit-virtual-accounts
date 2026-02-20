@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 Plugin Name: Xendit Payment
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 6.1.0
+Version: 6.0.2
 Requires Plugins: woocommerce
 Text Domain: woo-xendit-virtual-accounts
 Domain Path: /languages
@@ -17,7 +17,7 @@ License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
 
-define('WC_XENDIT_PG_VERSION', '6.1.0');
+define('WC_XENDIT_PG_VERSION', '6.0.2');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
@@ -60,7 +60,6 @@ function xendit_payment_init()
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-xendit-site-data.php';
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-phone-number-format.php';
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-sanitized-webhook.php';
-                require_once dirname(__FILE__) . '/libs/helpers/class-wc-xendit-signature-verifier.php';
 
                 require_once dirname(__FILE__) . '/libs/class-wc-xendit-helper.php';
                 require_once dirname(__FILE__) . '/libs/class-wc-xendit-invoice.php';
@@ -271,20 +270,7 @@ function xendit_payment_init()
 
                 $data = file_get_contents("php://input");
                 $response = json_decode($data);
-
                 $response = WC_Xendit_Sanitized_Webhook::map_and_sanitize_invoice_webhook($response);
-
-                if (!WC_Xendit_Signature_Verifier::verify_signature(
-                    $response->callback_id,
-                    $response->invoice_id,
-                    $response->status,
-                    $response->signature
-                )) {
-                    header('HTTP/1.1 401');
-                    echo 'Invalid signature';
-                    exit;
-                }
-
 
                 $identifier = $response->external_id;
 

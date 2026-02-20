@@ -1,7 +1,5 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) exit;
-
 echo wp_kses("<h2>Xendit</h2><p style='margin-bottom: 10px;'>".
             __('Accept payments with Xendit. See our 
                 <a href="https://docs.xendit.co/integrations/woocommerce/steps-to-integrate" target="_blank">documentation</a> for the full guide', 
