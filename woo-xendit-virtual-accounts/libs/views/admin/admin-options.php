@@ -1,4 +1,7 @@
-<?php if ($this->is_connected) : ?>
+<?php 
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+if ($this->is_connected) : ?>
 <table class="form-table">
     <?php $this->show_merchant_info(); ?>
 

@@ -1,4 +1,6 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 // Targeting admin shop order page with only xendit card promotion coupon
 if (is_admin() && in_array($pagenow, ['post.php', 'post-new.php']) && 'shop_order' === $typenow && $has_xendit_card_promotion === true) {
     // Get the actual total price for each item before discounted

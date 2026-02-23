@@ -20,7 +20,10 @@ class WC_Xendit_Sanitized_Webhook {
             'platform' => self::safe_sanitize($data, 'platform'),
             'invoice_id' => self::safe_sanitize($data, 'invoice_id'),
             'business_id' => self::safe_sanitize($data, 'business_id'),
-            'external_id' => self::safe_sanitize($data, 'external_id')
+            'external_id' => self::safe_sanitize($data, 'external_id'),
+            'callback_id' => self::safe_sanitize($data, 'callback_id'),
+            'version' => self::safe_sanitize($data, 'version'),
+            'signature' => self::safe_sanitize($data, 'signature')
         );
 
         if (!empty($data->description)) {
