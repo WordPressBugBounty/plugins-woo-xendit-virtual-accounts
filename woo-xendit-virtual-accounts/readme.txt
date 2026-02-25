@@ -3,7 +3,7 @@ Contributors: tpixendit
 Tags: xendit, payment, payment gateway, payment, southeast asia
 Requires at least: 4.9
 Tested up to: 6.9
-Stable tag: 6.1.1
+Stable tag: 6.1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,9 @@ To enrich the eCommerce experience, Xendit-WooCommerce plugin allows secure onli
 8. Adjust your settings and save. You can see the new payment options by viewing your WooCommerce checkout page while you have items in the cart.
 
 == Changelog ==
+= 6.1.2 =
+- Bugfix: Remove validation for the public key mode checking in signature verifier class
+
 = 6.1.1 =
 - Bugfix: make constants required before runing signature verifying process
 

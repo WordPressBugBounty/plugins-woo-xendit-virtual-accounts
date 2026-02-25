@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 Plugin Name: Xendit Payment
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 6.1.1
+Version: 6.1.2
 Requires Plugins: woocommerce
 Text Domain: woo-xendit-virtual-accounts
 Domain Path: /languages
@@ -17,7 +17,7 @@ License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
 
-define('WC_XENDIT_PG_VERSION', '6.1.1');
+define('WC_XENDIT_PG_VERSION', '6.1.2');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
@@ -254,11 +254,6 @@ function xendit_payment_init()
     function check_xendit_response()
     {
         global $wpdb, $woocommerce;
-
-        // Ensure constants are loaded before signature verification
-        if (!defined('INTEGRATION_NOTIFICATION_SIGNATURE_PUBLIC_KEYS')) {
-            require_once dirname(__FILE__) . '/libs/constants/constants.php';
-        }
 
         if (isset($_REQUEST['xendit_mode'])) {
             try {

@@ -50,9 +50,14 @@ class WC_Xendit_Signature_Verifier
     }
     private static function load_public_keys()
     {
-        if (!defined('INTEGRATION_NOTIFICATION_SIGNATURE_PUBLIC_KEYS') || !defined('INTEGRATION_NOTIFICATION_SIGNATURE_PUBLIC_KEYS_STAGING')) {
-            WC_Xendit_PG_Logger::log('Public key constant not defined');
+        if (XENDIT_ENV === 'production' && !defined('INTEGRATION_NOTIFICATION_SIGNATURE_PUBLIC_KEYS')) {
+            WC_Xendit_PG_Logger::log('Public key constant not defined ');
             return [];
+        }
+
+        // write to log but don't return anything if it is failed
+        if (XENDIT_ENV === 'staging' && !defined('INTEGRATION_NOTIFICATION_SIGNATURE_PUBLIC_KEYS_STAGING')) {
+            WC_Xendit_PG_Logger::log('Public key constant not defined for staging');
         }
 
         $keys = XENDIT_ENV === 'production' ? INTEGRATION_NOTIFICATION_SIGNATURE_PUBLIC_KEYS : INTEGRATION_NOTIFICATION_SIGNATURE_PUBLIC_KEYS_STAGING;
