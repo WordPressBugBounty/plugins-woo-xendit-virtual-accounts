@@ -6,6 +6,18 @@ if (! defined('ABSPATH')) {
 return apply_filters(
     'wc_xendit_gateway_settings',
     array(
+        'payment_session_option' => array(
+            'title' => esc_html__('Payment Session Options', 'woo-xendit-virtual-accounts'),
+            'type'  => 'title',
+        ),
+
+        'enable_payment_session' => array(
+            'title'   => __('Enable Payment Session', 'woo-xendit-virtual-accounts'),
+            'type'    => 'toggle',
+            'label'   => __('Enable Payment Session', 'woo-xendit-virtual-accounts'),
+            'default' => 'no',
+        ),
+        
         'general_options' => array(
             'title' => esc_html__('Xendit Payment Gateway Options', 'woo-xendit-virtual-accounts'),
             'type' => 'title',
@@ -60,6 +72,13 @@ return apply_filters(
                 __('Find your API keys <a href="https://dashboard.xendit.co/settings/developers#api-keys" target="_blank">here</a> (switch between Test and Live modes using the options on the top left of your Xendit dashboard)', 'woo-xendit-virtual-accounts'),
                 ['a' => ['href' => true, 'target' => true], 'br' => [], 'b' => []]
             ),
+        ),
+
+        'notification_url' => array(
+            'title' => esc_html__('Notification URL', 'woo-xendit-virtual-accounts'),
+            'type' => 'text',
+            'description' => esc_html__('Notification url to receive payment notification', 'woo-xendit-virtual-accounts'),
+            'placeholder' => home_url()
         ),
 
         'external_id_format' => array(
@@ -169,6 +188,6 @@ return apply_filters(
                 'HOURS' => esc_html('Hours'),
                 'DAYS' => esc_html('Days'),
             ),
-        ),
+        )
     )
 );

@@ -333,7 +333,7 @@ final class WC_Xendit_PG_Helper
      * @param WC_Order $order
      * @return string
      */
-    public static function generate_invoice_description(WC_Order $order): string
+    public static function generate_description(WC_Order $order): string
     {
         $blog_name = html_entity_decode(get_option('blogname'), ENT_QUOTES | ENT_HTML5);
         $identifier = $order->get_id();
@@ -347,10 +347,10 @@ final class WC_Xendit_PG_Helper
         // Return deposit description
         if (self::is_deposit_order($order) && !empty($order->get_parent_id())) {
             $parent = wc_get_order($order->get_parent_id());
-            return sprintf('Partial Payment for order #%s at %s', $identifier, $blog_name);
+            return sprintf('Partial Payment for WooCommerce order #%s at %s', $identifier, $blog_name);
         }
 
-        return sprintf("Payment for Order #%s at %s", $identifier, $blog_name);
+        return sprintf("Payment for WooCommerce Order #%s at %s", $identifier, $blog_name);
     }
 
     /**

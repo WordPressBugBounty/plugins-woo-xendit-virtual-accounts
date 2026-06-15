@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 Plugin Name: Xendit Payment
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 6.1.2
+Version: 7.0.0
 Requires Plugins: woocommerce
 Text Domain: woo-xendit-virtual-accounts
 Domain Path: /languages
@@ -17,7 +17,7 @@ License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
 
-define('WC_XENDIT_PG_VERSION', '6.1.2');
+define('WC_XENDIT_PG_VERSION', '7.0.0');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
@@ -52,6 +52,9 @@ function xendit_payment_init()
             {
                 require_once dirname(__FILE__) . '/libs/constants/constants.php';
                 require_once dirname(__FILE__) . '/libs/class-wc-xendit-api.php';
+                require_once dirname(__FILE__) . '/libs/class/integration-notification.php';
+                require_once dirname(__FILE__) . '/libs/class/class-wc-xendit-notification-result.php';
+                require_once dirname(__FILE__) . '/libs/class/class-wc-xendit-payment-session-notification-handler.php';
 
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-payment-fees.php';
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-expired.php';
@@ -61,9 +64,10 @@ function xendit_payment_init()
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-phone-number-format.php';
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-sanitized-webhook.php';
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-xendit-signature-verifier.php';
-
+                require_once dirname(__FILE__) . '/libs/traits/trait-xendit-gateway.php';
                 require_once dirname(__FILE__) . '/libs/class-wc-xendit-helper.php';
                 require_once dirname(__FILE__) . '/libs/class-wc-xendit-invoice.php';
+                require_once dirname(__FILE__) . '/libs/class-wc-xendit-payment-session.php';
                 require_once dirname(__FILE__) . '/libs/class-wc-xendit-cc.php';
                 require_once dirname(__FILE__) . '/libs/class-wc-xendit-cc-addons.php';
 
@@ -114,7 +118,6 @@ function xendit_payment_init()
                 return array_merge(
                     $methods ?? [],
                     array(
-                        'WC_Xendit_Invoice',
                         $this->should_load_addons() ? 'WC_Xendit_CC_Addons' : 'WC_Xendit_CC'
                     )
                 );
@@ -128,7 +131,10 @@ function xendit_payment_init()
              */
             public function add_xendit_payment_gateway($methods)
             {
-                $methods[] = 'WC_Xendit_Invoice';
+                $main_settings = get_option('woocommerce_xendit_gateway_settings');
+                $is_payment_session_enabled = !empty($main_settings['enable_payment_session']) && $main_settings['enable_payment_session'] == 'yes';
+
+                $methods[] = $is_payment_session_enabled ? 'WC_Xendit_Payment_Session_Gateway' : 'WC_Xendit_Invoice';
 
                 // For admin
                 if (is_admin()) {
@@ -201,22 +207,8 @@ function xendit_payment_init()
 
     function xendit_disconect()
     {
-        // Delete OAuth data
-        WC_Xendit_Oauth::removeXenditOAuth();
+        WC_Xendit_Oauth::disconnect();
 
-        // Delete API keys
-        $main_settings = get_option('woocommerce_xendit_gateway_settings');
-        foreach (['secret_key', 'secret_key_dev', 'api_key', 'api_key_dev'] as $key) {
-            if (isset($main_settings[$key])) {
-                unset($main_settings[$key]);
-            }
-        }
-        update_option('woocommerce_xendit_gateway_settings', $main_settings);
-
-        // Delete merchant info
-        delete_transient('xendit_merchant_info');
-
-        // Response
         $response = new WP_REST_Response(['message' => 'success']);
         $response->set_status(201);
 
@@ -248,6 +240,123 @@ function xendit_payment_init()
         // Add a custom status code
         $response->set_status(200);
         return $response;
+    }
+
+
+    add_action('woocommerce_api_xendit_integration_notification', 'check_xendit_integration_notification_response');
+    function check_xendit_integration_notification_response()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('HTTP/1.1 501 Not Implemented');
+            echo 'Invalid request method';
+            exit;
+        }
+
+        try {
+            $data = file_get_contents('php://input');
+            $payload = json_decode($data, true);
+
+            if (empty($payload) || !is_array($payload)) {
+                header('HTTP/1.1 400 Bad Request');
+                echo 'Invalid payload';
+                exit;
+            }
+
+            $sanitized_payload = WC_Xendit_Sanitized_Webhook::map_and_sanitize_intg_notification_webhook($payload);
+
+            if (!WC_Xendit_Signature_Verifier::verify_integration_notification_signature($sanitized_payload, $sanitized_payload->signature)) {
+                header('HTTP/1.1 401 Unauthorized');
+                echo 'Invalid signature';
+                exit;
+            }
+
+            // Locate WooCommerce order
+            $order = wc_get_order($sanitized_payload->woocommerce_order_id);
+
+            if (!$order) {
+                WC_Xendit_PG_Logger::log('[Integration notification process] Order #' . $sanitized_payload->woocommerce_order_id . ' is not found');
+                header('HTTP/1.1 404 Not Found');
+                echo esc_html('Order not found for id '.$sanitized_payload->woocommerce_order_id);
+                exit;
+            }
+
+            $trigger = $sanitized_payload->trigger;
+            switch ($trigger) {
+                case 'payment_session':
+                    handle_payment_session_notification($order, $sanitized_payload);
+                    break;
+                case 'payment_request':
+                    handle_payment_request_notification($order, $sanitized_payload);
+                    break;
+                case 'refund':
+                    handle_refund_notification($order, $sanitized_payload);
+                    break;
+                default:
+                    WC_Xendit_PG_Logger::log('[Integration notification process] Unknown trigger: ' . $trigger);
+                    header('HTTP/1.1 400 Bad Request');
+                    echo 'Unknown trigger';
+                    exit;
+            }
+        } catch (Exception $e) {
+            WC_Xendit_PG_Logger::log('[Integration notification process] Error: ' . $e->getMessage());
+            header('HTTP/1.1 500 Internal Server Error');
+            echo 'Error processing callback';
+            exit;
+        }
+    }
+
+    /**
+     * Handle payment_session trigger from integration notification webhook.
+     *
+     * Thin wrapper that delegates to WC_Xendit_Payment_Session_Notification_Handler
+     * and translates the result into an HTTP response.
+     *
+     * @param WC_Order $order
+     * @param IntegrationNotification $payload Sanitized webhook payload
+     * @return void
+     */
+    function handle_payment_session_notification(WC_Order $order, IntegrationNotification $payload)
+    {
+        $result = WC_Xendit_Payment_Session_Notification_Handler::handle($order, $payload);
+
+        header(sprintf('HTTP/1.1 %d', $result->http_status));
+        echo esc_html($result->body);
+        exit;
+    }
+
+    /**
+     * Handle payment_request trigger from integration notification webhook.
+     *
+     * @param WC_Order $order
+     * @param IntegrationNotification $payload Sanitized webhook payload
+     * @return void
+     */
+    function handle_payment_request_notification(WC_Order $order, IntegrationNotification $payload)
+    {
+        // TODO: Implement payment request notification handling
+        WC_Xendit_PG_Logger::log('[Integration notification process] payment_request trigger not yet implemented for order #' . $order->get_id());
+        header('HTTP/1.1 501 Not Implemented');
+        echo 'payment_request handler not implemented';
+        exit;
+    }
+
+    /**
+     * Handle refund trigger from integration notification webhook.
+     *
+     * Per ADR-009, refund notifications are no longer processed. Refunds are
+     * handled synchronously in process_refund(). Return 503 so TPI knows
+     * this endpoint does not handle refund triggers.
+     *
+     * @param WC_Order $order
+     * @param IntegrationNotification $payload Sanitized webhook payload
+     * @return void
+     */
+    function handle_refund_notification(WC_Order $order, IntegrationNotification $payload)
+    {
+        WC_Xendit_PG_Logger::log('[Integration notification process] refund trigger not yet implemented for order #' . $order->get_id());
+        header('HTTP/1.1 501 Not Implemented');
+        echo 'refund handler not implemented';
+        exit;
     }
 
     add_action('woocommerce_api_wc_xendit_callback', 'check_xendit_response');
@@ -301,7 +410,7 @@ function xendit_payment_init()
                                 'meta_value' => $order_id,
                                 'limit' => 1
                             ));
-                            
+
                             if (!empty($orders)) {
                                 $order = $orders[0];
                                 $order_id = $order->get_id();
@@ -338,6 +447,7 @@ function xendit_payment_init()
         }
     }
 
+    #TODO: Remove this action as it no longer relevant, the checkbox of hold stock is already removed
     add_action('woocommerce_cancel_unpaid_orders', 'custome_cancel_unpaid_orders');
     function custome_cancel_unpaid_orders()
     {
@@ -424,6 +534,7 @@ function xendit_payment_init()
         }
     }
 
+    #TODO: Mark for removal as it no longer relevant, re-visit when invoice class is removed
     /**
      * Keep the old callback during transitioning period
      */
@@ -456,10 +567,11 @@ function xendit_payment_init()
             return;
         }
 
-        wp_register_script('sweetalert',  plugins_url().'/assets/js/frontend/sweetalert.min.js', null, null, true);
+        wp_register_script('sweetalert', plugins_url().'/assets/js/frontend/sweetalert.min.js', null, null, true);
         wp_enqueue_script('sweetalert');
     }
 
+    #TODO: Mark for removal as it no longer relevant, re-visit when invoice & CC class is removed
     add_filter('woocommerce_available_payment_gateways', 'xendit_show_hide_cc_old_method');
     function xendit_show_hide_cc_old_method($gateways)
     {
@@ -474,6 +586,29 @@ function xendit_payment_init()
         }
 
         return $gateways;
+    }
+
+    /**
+     * Introduce merchant to payment session on first load.
+     * Runs once — sets `is_new_merchant_when_payment_session_introduced` and
+     * `enable_payment_session` based on whether credentials already exist.
+     */
+    add_action('init', 'introduce_to_payment_session');
+    function introduce_to_payment_session()
+    {
+        $settings = get_option('woocommerce_xendit_gateway_settings', []);
+
+        if (!empty($settings['is_new_merchant_when_payment_session_introduced'])) {
+            return;
+        }
+
+        $api = new WC_Xendit_PG_API();
+        $has_no_credentials = !$api->isCredentialExist();
+
+        $settings['is_new_merchant_when_payment_session_introduced'] = $has_no_credentials ? 'yes' : 'no';
+        $settings['enable_payment_session'] = $has_no_credentials ? 'yes' : 'no';
+
+        update_option('woocommerce_xendit_gateway_settings', $settings);
     }
 
     /**
@@ -605,8 +740,8 @@ function xendit_payment_init()
         return false;
     }
 
-    add_filter('woocommerce_thankyou_order_received_text', 'xendit_woo_redirect_invoice', 10, 2);
-    function xendit_woo_redirect_invoice($str, $order)
+    add_filter('woocommerce_thankyou_order_received_text', 'xendit_woo_redirect_payment_url', 10, 2);
+    function xendit_woo_redirect_payment_url($str, $order)
     {
         if (empty($_GET['order_id']) || !is_object($order)) {
             return $str;
@@ -618,10 +753,21 @@ function xendit_payment_init()
 
         $order_id = wc_clean($_GET['order_id']);
         $order = wc_get_order($order_id);
+        $payment_link_url = '';
+
         $invoice_url = $order->get_meta('Xendit_invoice_url');
+        if (!empty($invoice_url)) {
+            $payment_link_url = $invoice_url;
+        }
+
+        $payment_session_url = $order->get_meta('payment_session_payment_link_url');
+        if (!empty($payment_session_url)) {
+            $payment_link_url = $payment_session_url;
+        }
+
         $delay = 3;
 
-        include WC_XENDIT_PG_PLUGIN_PATH . '/libs/views/checkout/redirect-invoice.php';
+        include WC_XENDIT_PG_PLUGIN_PATH . '/libs/views/checkout/redirect-payment-url.php';
         return $str;
     }
 
@@ -630,11 +776,13 @@ function xendit_payment_init()
     {
         $xendit_invoice = WC_Xendit_Invoice::instance();
         if ($xendit_invoice->developmentmode == 'yes' && $xendit_invoice->id == 'xendit_gateway') {
-            print(wp_kses('
+            print(wp_kses(
+                '
                 <div class="notice notice-warning">
                     <p>'.__('Xendit payments in TEST mode. Disable "Test Environment" in settings to accept payments. Your Xendit account must also be activated. Learn more <a href=\"https://docs.xendit.co/getting-started/activate-account\" target=\"_blank\">here</a>', 'woo-xendit-virtual-accounts').'</p>
-                </div>', 
-                ['div'=>['class'=>true], 'p'=>true, 'a' => ['href' => true, 'target' => true]])
+                </div>',
+                ['div' => ['class' => true], 'p' => true, 'a' => ['href' => true, 'target' => true]]
+            )
             );
         }
     }

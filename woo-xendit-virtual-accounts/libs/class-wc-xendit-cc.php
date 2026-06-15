@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) {
  */
 class WC_Xendit_CC extends WC_Payment_Gateway_CC
 {
+    use Xendit_Gateway_Trait;
     const DEFAULT_CHECKOUT_FLOW = 'CHECKOUT_PAGE';
     const DEFAULT_CARD_ICONS = ['visa', 'mastercard'];
 
@@ -159,6 +160,22 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
     private static $_instance;
 
     /**
+     * @var string $redirect_after
+     */
+    private $redirect_after;
+
+    /**
+     * @var boolean $use_transaction_id_for_refund_order_id
+     */
+    private $use_transaction_id_for_refund_order_id = true;
+
+    /** @var bool $is_connected */
+    public $is_connected = false;
+
+    /** @var string $notification_url */
+    private $notification_url = '';
+
+    /**
      * Constructor
      * @throws Exception
      */
@@ -210,11 +227,17 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         $this->saved_cards = true;
         $this->external_id_format = !empty($main_settings['external_id_format']) ? $main_settings['external_id_format'] : self::DEFAULT_EXTERNAL_ID_VALUE;
         $this->xendit_status = $this->developmentmode == 'yes' ? "[Development]" : "[Production]";
-        $this->xendit_callback_url = home_url() . '/?wc-api=wc_xendit_callback&xendit_mode=xendit_cc_callback';
-        $this->xendit_invoice_callback_url = home_url() . '/?wc-api=wc_xendit_callback&xendit_mode=xendit_invoice_callback';
+        $this->notification_url = $main_settings['notification_url'] ?? null;
+        $this->xendit_callback_url = !empty($this->notification_url) 
+            ? $this->notification_url.'/?wc-api=wc_xendit_callback&xendit_mode=xendit_cc_callback' 
+            : home_url() . '/?wc-api=wc_xendit_callback&xendit_mode=xendit_cc_callback';
+        $this->xendit_invoice_callback_url = !empty($this->notification_url) 
+            ? $this->notification_url.'/?wc-api=wc_xendit_callback&xendit_mode=xendit_invoice_callback' 
+            : home_url() . '/?wc-api=wc_xendit_callback&xendit_mode=xendit_invoice_callback';
         $this->success_payment_xendit = $main_settings['success_payment_xendit'] ?? '';
         $this->for_user_id = $main_settings['on_behalf_of'] ?? '';
         $this->publishable_key = $this->testmode ? ($main_settings['api_key_dev'] ?? '') : ($main_settings['api_key'] ?? '');
+        $this->redirect_after = $main_settings['redirect_after'] ?? 'CHECKOUT_FLOW';
 
         if ($this->xendit_checkout) {
             $this->order_button_text = 'Continue to payment';
@@ -941,7 +964,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         $amount = $order->get_total();
         $currency = $order->get_currency();
         $blog_name = html_entity_decode(get_option('blogname'), ENT_QUOTES | ENT_HTML5);
-        $description = WC_Xendit_PG_Helper::generate_invoice_description($order);
+        $description = WC_Xendit_PG_Helper::generate_description($order);
 
         $payer_email = !empty($order->get_billing_email()) ? $order->get_billing_email() : 'noreply@mail.com';
         $payment_gateway = wc_get_payment_gateway_by_order($order_id);
@@ -958,7 +981,7 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
         $invoice_exp = $order->get_meta('Xendit_expiry');
 
         $additional_data = WC_Xendit_PG_Helper::generate_items_and_customer($order);
-        $redirect_after = WC_Xendit_Invoice::instance()->get_xendit_option('redirect_after');
+        $redirect_after = $this->redirect_after;
 
         $invoice_data = array(
             'external_id' => WC_Xendit_PG_Helper::generate_external_id($order, $this->external_id_format),
@@ -1216,90 +1239,6 @@ class WC_Xendit_CC extends WC_Payment_Gateway_CC
 
         if (is_callable(array($order, 'save'))) {
             $order->save();
-        }
-    }
-
-    /**
-     * Refund a charge
-     *
-     * @param $order_id
-     * @param $amount
-     * @param $reason
-     * @param $duplicated
-     * @return bool|void
-     * @throws Exception
-     */
-    public function process_refund($order_id, $amount = null, $reason = '', $duplicated = false)
-    {
-        try {
-            $order = wc_get_order($order_id);
-
-            if (!$order || !$order->get_transaction_id()) {
-                return false;
-            }
-
-            $default_external_id = $this->external_id_format . '-' . $order->get_transaction_id();
-            $body = array(
-                    'store_name' => get_option('blogname'),
-                    'external_id' => $duplicated ? sprintf("%s-%s-%s", $this->external_id_format, uniqid(), $order->get_transaction_id()) : $default_external_id
-            );
-
-            if (is_null($amount) || (float)$amount < 1) {
-                return false;
-            }
-
-            if ($amount) {
-                $body['amount'] = $amount;
-            }
-
-            if ($reason) {
-                $body['metadata'] = array(
-                        'reason' => $reason,
-                );
-            }
-
-            $response = $this->xenditClass->createRefund($body, $order->get_transaction_id());
-            if ($response instanceof WP_Error) {
-                // log error metrics
-                $metrics = $this->xenditClass->constructMetricPayload('woocommerce_refund', array(
-                        'type' => 'error',
-                        'payment_method' => strtoupper($this->method_code),
-                        'error_code' => $response->get_error_code(),
-                        'error_message' => $response->get_error_message()
-                ));
-                $this->xenditClass->trackMetricCount($metrics);
-
-                return false;
-            } elseif (!empty($response['error_code'])) {
-                // log error metrics
-                $metrics = $this->xenditClass->constructMetricPayload('woocommerce_refund', array(
-                        'type' => 'error',
-                        'payment_method' => strtoupper($this->method_code),
-                        'error_code' => $response['error_code'],
-                        'error_message' => $response['message'] ?? '',
-                ));
-                $this->xenditClass->trackMetricCount($metrics);
-
-                // retry refund with new external_id
-                if ($response['error_code'] === 'DUPLICATE_REFUND_ERROR') {
-                    return $this->process_refund($order_id, $amount, $reason, true);
-                }
-
-                return false;
-            } elseif (!empty($response['id'])) {
-                $refund_message = sprintf('Refunded %1$s - Refund ID: %2$s - Reason: %3$s', wc_price($response['amount']), $response['id'], $reason);
-                $order->add_order_note($refund_message);
-
-                return true;
-            }
-        } catch (Throwable $e) {
-            $metrics = $this->xenditClass->constructMetricPayload('woocommerce_refund', array(
-                    'type' => 'error',
-                    'payment_method' => strtoupper($this->method_code),
-                    'error_message' => $e->getMessage()
-            ));
-            $this->xenditClass->trackMetricCount($metrics);
-            return false;
         }
     }
 

@@ -16,6 +16,20 @@ class WC_Xendit_Oauth
 
     const XENDIT_VALIDATION_KEY_OPTION_NAME = 'woocommerce_xendit_oauth_validation_key';
 
+    const GATEWAY_SETTINGS_OPTION = 'woocommerce_xendit_gateway_settings';
+
+    const MERCHANT_CACHE_TRANSIENT = 'xendit_merchant_info';
+
+    /**
+     * API credential keys stored inside the gateway settings option.
+     */
+    const CREDENTIAL_KEYS = ['secret_key', 'secret_key_dev', 'api_key', 'api_key_dev'];
+
+    /**
+     * Merchant info keys cached inside the gateway settings option.
+     */
+    const MERCHANT_INFO_KEYS = ['business_id', 'name'];
+
     /**
      * @param array $data
      * @return void
@@ -34,8 +48,6 @@ class WC_Xendit_Oauth
 
     public static function removeXenditOAuth()
     {
-        global $wpdb, $woocommerce;
-
         $xenditClass = new WC_Xendit_PG_API();
         $xenditClass->uninstallApp();
 
@@ -46,9 +58,41 @@ class WC_Xendit_Oauth
 
     public static function getXenditOAuth()
     {
-        global $wpdb, $woocommerce;
-
         return get_option(self::XENDIT_OAUTH_OPTION_NAME);
+    }
+
+    public static function disconnect(): void
+    {
+        self::removeXenditOAuth();
+
+        $settings = get_option(self::GATEWAY_SETTINGS_OPTION, []);
+        $keys_to_remove = array_merge(self::CREDENTIAL_KEYS, self::MERCHANT_INFO_KEYS);
+
+        foreach ($keys_to_remove as $key) {
+            unset($settings[$key]);
+        }
+        update_option(self::GATEWAY_SETTINGS_OPTION, $settings);
+
+        self::clearMerchantCache();
+    }
+
+    public static function clearMerchantCache(): void
+    {
+        delete_transient(self::MERCHANT_CACHE_TRANSIENT);
+
+        $settings = get_option(self::GATEWAY_SETTINGS_OPTION, []);
+        $changed = false;
+
+        foreach (self::MERCHANT_INFO_KEYS as $key) {
+            if (isset($settings[$key])) {
+                unset($settings[$key]);
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            update_option(self::GATEWAY_SETTINGS_OPTION, $settings);
+        }
     }
 
     /*
@@ -58,8 +102,6 @@ class WC_Xendit_Oauth
     */
     public static function updateValidationKey($key)
     {
-        global $wpdb, $woocommerce;
-
         $oauth = get_option(self::XENDIT_VALIDATION_KEY_OPTION_NAME);
 
         return empty($oauth) ? add_option(self::XENDIT_VALIDATION_KEY_OPTION_NAME, $key) : update_option(self::XENDIT_VALIDATION_KEY_OPTION_NAME, $key) ;
@@ -67,8 +109,6 @@ class WC_Xendit_Oauth
 
     public static function getValidationKey()
     {
-        global $wpdb, $woocommerce;
-
         return get_option(self::XENDIT_VALIDATION_KEY_OPTION_NAME);
     }
 }

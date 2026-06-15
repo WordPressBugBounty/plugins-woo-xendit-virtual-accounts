@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2022-09-06 09:34+0700\n"
-"PO-Revision-Date: 2025-10-07 15:05+0700\n"
+"PO-Revision-Date: 2026-03-10 07:51+0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: id\n"
@@ -204,3 +204,30 @@ msgstr "Bayar pesanan anda melalui gerbang pembayaran Xendit"
 
 msgid "Checkout Display Options"
 msgstr "Opsi Tampilan Checkout"
+
+msgid "Payment Session Options"
+msgstr "Opsi Payment Session"
+
+msgid "Enable Payment Session"
+msgstr "Aktifkan Payment Session"
+
+msgid "Notification URL"
+msgstr "URL Notifikasi"
+
+msgid "Notification url to receive payment notification"
+msgstr "URL notifikasi untuk menerima status pembayaran"
+
+msgid "Refund amount must be greater than zero."
+msgstr "Jumlah refund harus lebih dari nol."
+
+msgid "Order not found."
+msgstr "Pesanan tidak ditemukan."
+
+msgid "This order has no associated payment ID for refunding."
+msgstr "Pesanan ini tidak memiliki ID pembayaran untuk proses refund."
+
+msgid "This order was not paid through the expected payment gateway."
+msgstr "Pesanan ini tidak dibayar melalui gateway pembayaran yang sesuai."
+
+msgid "Business ID is not configured. Please check your Xendit settings."
+msgstr "Business ID belum dikonfigurasi. Silakan periksa pengaturan Xendit Anda."

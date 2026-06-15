@@ -117,6 +117,58 @@ class WC_Xendit_PG_API
         }
     }
 
+    public function createCheckoutSession($body, $header = [])
+    {
+        $end_point = $this->tpi_gateway_domain.'/woocommerce/checkout';
+
+        $payload = json_encode($body);
+        $default_header = $this->defaultHeader();
+
+        $args = array(
+            'headers' => array_merge($default_header, $header),
+            'timeout' => WC_Xendit_PG_API::DEFAULT_TIME_OUT,
+            'body' => $payload
+        );
+
+        try {
+            $response = wp_remote_post($end_point, $args);
+            $this->handleNetworkError($response);
+            return json_decode($response['body'], true);
+        } catch (Exception $e) {
+            throw new Exception(esc_html($e->getMessage()));
+        }
+    }
+
+    /**
+     * Create a WooCommerce refund via TPI Service
+     *
+     * @param array $body
+     * @return array
+     * @throws Exception
+     */
+    public function createWooCommerceRefund($body)
+    {
+        $end_point = $this->tpi_gateway_domain.'/woocommerce/refund';
+
+        $payload = json_encode($body);
+        $default_header = $this->defaultHeader();
+
+        $args = array(
+            'headers' => $default_header,
+            'timeout' => WC_Xendit_PG_API::DEFAULT_TIME_OUT,
+            'body' => $payload
+        );
+
+        try {
+            $response = wp_remote_post($end_point, $args);
+            $this->handleNetworkError($response);
+            return json_decode($response['body'], true);
+        } catch (Exception $e) {
+            throw new Exception(esc_html($e->getMessage()));
+        }
+    }
+
+
     /**
      * @param $invoice_id
      * @return mixed

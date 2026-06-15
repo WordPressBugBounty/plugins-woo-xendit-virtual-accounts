@@ -4,11 +4,26 @@ if (!defined('ABSPATH')) {
 }
 
 class WC_Xendit_Sanitized_Webhook {
-    private static function safe_sanitize($data, $key, $sanitize_func = 'sanitize_text_field') {
+    private static function safe_sanitize($data, $key, $sanitize_fn = 'wc_clean') {
         if (is_object($data)) {
-            return isset($data->$key) ? $sanitize_func($data->$key) : '';
+            $data = (array) $data;
         }
-        return isset($data[$key]) ? $sanitize_func($data[$key]) : '';
+
+        if (!is_array($data) || !array_key_exists($key, $data)) {
+            return '';
+        }
+
+        $value = $data[$key];
+
+        if (is_string($value)) {
+            return $sanitize_fn($value);
+        }
+
+        if (is_scalar($value)) {
+            return $sanitize_fn((string)$value);
+        }
+
+        return '';
     }
 
     public static function map_and_sanitize_invoice_webhook($data) {
@@ -58,11 +73,11 @@ class WC_Xendit_Sanitized_Webhook {
                 'state' => self::safe_sanitize($address, 'state'),
                 'country' => self::safe_sanitize($address, 'country'),
                 'postal_code' => self::safe_sanitize($address, 'postal_code'),
-                'street_line1' => self::safe_sanitize($address, 'street_line1', 'sanitize_textarea_field'),
+                'street_line1' => self::safe_sanitize($address, 'street_line1'),
             );
 
             if (!empty($address->street_line2)) {
-                $currentAddress['street_line2'] = self::safe_sanitize($address, 'street_line2', 'sanitize_textarea_field');
+                $currentAddress['street_line2'] = self::safe_sanitize($address, 'street_line2');
             }   
 
             array_push($addresses, $currentAddress);
@@ -134,5 +149,71 @@ class WC_Xendit_Sanitized_Webhook {
         );
 
         return $webhook;
+    }
+
+    public static function map_and_sanitize_intg_notification_webhook($data): IntegrationNotification {
+        // Validate required presence first
+        $required_keys = ['_id', 'trigger', 'status', 'app_mode', 'integration_name', 'business_id', 'signature', 'signature_version', 'woocommerce_order_id'];
+
+        foreach ( $required_keys as $key ) {
+            if (empty($data[$key])) {
+                $message = sprintf("Integration notif missing required key: %s", $key);
+                WC_Xendit_PG_Logger::log($message);
+                throw new InvalidArgumentException(esc_html($message));
+            }
+        }
+
+        $sanitized_data = array(
+            '_id' => self::safe_sanitize($data, '_id'),
+            'trigger' => self::safe_sanitize($data, 'trigger'),
+            'status' => self::safe_sanitize($data, 'status'),
+            'webhook_id' => self::safe_sanitize($data, 'webhook_id'),
+            'app_mode' => self::safe_sanitize($data, 'app_mode'),
+            'integration_name' => self::safe_sanitize($data, 'integration_name'),
+            'business_id' => self::safe_sanitize($data, 'business_id'),
+            'signature' => self::safe_sanitize($data, 'signature'),
+            'signature_version' => isset($data['signature_version']) ? absint($data['signature_version']) : 0,
+            'createdAt' => self::safe_sanitize($data, 'createdAt'),
+            'updatedAt' => self::safe_sanitize($data, 'updatedAt'),
+            'woocommerce_order_id' => isset($data['woocommerce_order_id']) ? absint($data['woocommerce_order_id']) : 0,
+        );
+
+        // Nested session object
+        if (!empty($data['session']) && is_array($data['session'])) {
+            $sanitized_session = [];
+            foreach ($data['session'] as $k => $v) {
+                $sanitized_session[$k] = self::safe_sanitize($data['session'], $k);
+            }
+            $sanitized_data['session'] = $sanitized_session;
+        }
+
+        // Nested payment_request object
+        if (!empty($data['payment_request']) && is_array($data['payment_request'])) {
+            $sanitized_data['payment_request'] = array(
+                'payment_request_id' => self::safe_sanitize($data['payment_request'], 'payment_request_id'),
+                'payment_id'         => self::safe_sanitize( $data['payment_request'], 'payment_id' ),
+                'status'             => self::safe_sanitize($data['payment_request'], 'status'),
+            );
+        }
+
+        // Nested payment_token object
+        if (!empty($data['payment_token']) && is_array($data['payment_token'])) {
+            $sanitized_data['payment_token'] = array(
+                'payment_token_id' => self::safe_sanitize($data['payment_token'], 'payment_token_id'),
+                'status'           => self::safe_sanitize($data['payment_token'], 'status'),
+            );
+        }
+
+        // Nested refund object
+        if (!empty($data['refund']) && is_array($data['refund'])) {
+            $sanitized_data['refund'] = array(
+                'refund_id' => self::safe_sanitize($data['refund'], 'refund_id'),
+                'status'    => self::safe_sanitize($data['refund'], 'status'),
+                'amount'    => self::safe_sanitize($data['refund'], 'amount'),
+                'currency'  => self::safe_sanitize($data['refund'], 'currency'),
+            );
+        }
+
+        return new IntegrationNotification($sanitized_data);
     }
 }

@@ -3,24 +3,18 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class WC_Xendit_Invoice extends WC_Payment_Gateway
+class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
 {
     use Xendit_Gateway_Trait;
 
-    const DEFAULT_MAXIMUM_AMOUNT = 1000000000;
-    const DEFAULT_MINIMUM_AMOUNT = 1;
-    const DEFAULT_EXTERNAL_ID_VALUE = 'woocommerce-xendit';
     const DEFAULT_CHECKOUT_FLOW = 'CHECKOUT_PAGE';
+    const DEFAULT_EXTERNAL_ID_VALUE = 'woocommerce-xendit';
 
     const API_KEY_FIELDS = array('dummy_api_key', 'dummy_secret_key', 'dummy_api_key_dev', 'dummy_secret_key_dev');
-
     /**
-     * @var WC_Xendit_Invoice
+     * @var WC_Xendit_Payment_Session_Gateway
      */
     private static $_instance;
-
-    /** @var bool $isActionCalled */
-    public $isActionCalled = false;
 
     /** @var string $method_code */
     public $method_code;
@@ -28,17 +22,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     /** @var string $developmentmode */
     public $developmentmode = '';
 
-    /** @var string $showlogo */
-    public $showlogo = 'yes';
-
-    /** @var string $success_response_xendit */
-    public $success_response_xendit = 'COMPLETED';
-
     /** @var string $success_payment_xendit */
     public $success_payment_xendit;
-
-    /** @var string $responce_url_sucess */
-    public $responce_url_sucess;
 
     /** @var string $checkout_msg */
     public $checkout_msg = 'Thank you for your order, please follow the account numbers provided to pay with secured Xendit.';
@@ -52,11 +37,11 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     /** @var string $xendit_status */
     public $xendit_status;
 
-    /** @var array $msg */
-    public $msg = ['message' => '', 'class' => ''];
+    /** @var string $reference_id_format */
+    public $reference_id_format;
 
     /** @var string $external_id_format */
-    public $external_id_format;
+    public $external_id_format; //TODO: Mark for removal after WC_Xendit_Invoice is deleted
 
     /** @var string $redirect_after */
     public $redirect_after;
@@ -99,32 +84,19 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     /** @var string $default_title */
     public $default_title = '';
 
-    /**
-     * @var int $DEFAULT_MAXIMUM_AMOUNT
-     */
-    public $DEFAULT_MAXIMUM_AMOUNT = 0;
-
-    /**
-     * @var int $DEFAULT_MINIMUM_AMOUNT
-     */
-    public $DEFAULT_MINIMUM_AMOUNT = 0;
+    /** @var string $notification_url */
+    private $notification_url = '';
 
     /**
      * @var boolean $use_transaction_id_for_refund_order_id
      */
-    private $use_transaction_id_for_refund_order_id = true;
-
-    /** @var string $notification_url */
-    private $notification_url = '';
+    private $use_transaction_id_for_refund_order_id = false;
 
     /**
      * Constructor
      */
     public function __construct()
     {
-        // check constants of XENDIT_ENV
-        $env = !empty(XENDIT_ENV) ? XENDIT_ENV : 'production';
-
         $this->id = 'xendit_gateway';
         $this->has_fields = true;
         $this->method_title = 'Xendit';
@@ -149,21 +121,15 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         $this->title = $this->get_xendit_title();
         $this->description = $this->get_xendit_description();
 
-        $this->DEFAULT_MAXIMUM_AMOUNT = self::DEFAULT_MAXIMUM_AMOUNT;
-        $this->DEFAULT_MINIMUM_AMOUNT = self::DEFAULT_MINIMUM_AMOUNT;
-
         $this->developmentmode = $this->get_option('developmentmode');
 
         $this->success_payment_xendit = $this->get_option('success_payment_xendit');
-        $this->responce_url_sucess = $this->get_option('responce_url_calback');
         $this->notification_url = $this->get_option('notification_url');
-        $this->xendit_callback_url = !empty($this->notification_url) 
-            ? $this->notification_url.'/?wc-api=wc_xendit_callback&xendit_mode=xendit_invoice_callback' 
-            : home_url() . '/?wc-api=wc_xendit_callback&xendit_mode=xendit_invoice_callback';
 
         $this->xendit_status = $this->developmentmode == 'yes' ? "[Development]" : "[Production]";
 
-        $this->external_id_format = !empty($this->get_option('external_id_format')) ? $this->get_option('external_id_format') : self::DEFAULT_EXTERNAL_ID_VALUE;
+        $this->reference_id_format = $this->get_option('external_id_format'); // make the same as extenal_id first
+        $this->external_id_format = !empty($this->get_option('external_id_format')) ? $this->get_option('external_id_format') : 'woocommerce-xendit'; //TODO: Mark for removal after WC_Xendit_Invoice is deleted
         $this->redirect_after = !empty($this->get_option('redirect_after')) ? $this->get_option('redirect_after') : self::DEFAULT_CHECKOUT_FLOW;
         $this->for_user_id = $this->get_option('on_behalf_of');
         $this->enable_xenplatform = $this->for_user_id ? 'yes' : $this->get_option('enable_xenplatform');
@@ -181,12 +147,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         add_action('woocommerce_receipt_' . $this->id, array(&$this, 'receipt_page'));
 
         add_filter('woocommerce_available_payment_gateways', array(&$this, 'check_gateway_status'));
-        add_action('woocommerce_order_status_changed', array(&$this, 'expire_invoice_when_order_cancelled'), 10, 3);
         wp_register_script('sweetalert', plugins_url('assets/js/frontend/sweetalert.min.js', WC_XENDIT_PG_MAIN_FILE), null, WC_XENDIT_PG_VERSION, true);
         wp_enqueue_script('sweetalert');
-
-        // Init payment channels
-        $this->init_activate_payment_channel();
     }
 
     /**
@@ -228,7 +190,7 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     }
 
     /**
-     * @return WC_Xendit_Invoice
+     * @return WC_Xendit_Payment_Session_Gateway
      */
     public static function instance()
     {
@@ -236,34 +198,6 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
             self::$_instance = new self();
         }
         return self::$_instance;
-    }
-
-    /**
-     * @return bool
-     */
-    protected function onboarded_payment_channel(): bool
-    {
-        if (get_option('xendit_onboarding_payment_channel') == 1) {
-            return true;
-        }
-        $this->update_option('enabled', 'yes'); // Enable Xendit_Gateway
-
-        return update_option('xendit_onboarding_payment_channel', 1);
-    }
-    
-
-    /**
-     * Used to enable the default activate channel when onboarding
-     *
-     * @return void
-     */
-    protected function init_activate_payment_channel()
-    {
-        if (!is_admin()) {
-            return;
-        }
-
-        $this->onboarded_payment_channel();
     }
 
     /**
@@ -381,7 +315,6 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         }
     }
 
-
     /**
      * Render a toggle switch for WooCommerce settings fields with type 'toggle'.
      */
@@ -415,132 +348,51 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         include plugin_dir_path(__FILE__) . 'views/admin/receipt-page.php';
     }
 
-    public function get_success_redirect_url($order): string
-    {
-        $returnUrl = $this->get_return_url($order);
-
-        if (strpos($returnUrl, home_url()) === false) {
-            $returnUrl = rtrim(wc_get_checkout_url(), '/') . $returnUrl;
-        }
-
-        return $returnUrl;
-    }
-
     /**
-     * @param $order_id
-     * @return array|void
-     * @throws Exception
+     * Process payment via Xendit Payment Session API
+     *
+     * @param int $order_id
+     * @return array
      */
     public function process_payment($order_id)
     {
         try {
+            $return_url = '';
             $order = wc_get_order($order_id);
-            $amount = $order->get_total();
-            $currency = $order->get_currency();
+            $store_url = !empty($this->notification_url) ? $this->notification_url : home_url();
 
-            if ($amount < $this->DEFAULT_MINIMUM_AMOUNT) {
-                WC_Xendit_PG_Helper::cancel_order($order, 'Cancelled because amount is below minimum amount');
-                /* translators: %1%s: Currency, 2: Min Amount. */
-                $err_msg = sprintf(__(
-                    'The minimum amount for using this payment is %1$s %2$s. Please put more item(s) to reach the minimum amount. Code: 100001',
-                    'woo-xendit-virtual-accounts'
-                ), $currency, wc_price($this->DEFAULT_MINIMUM_AMOUNT));
-
-                wc_add_notice($this->get_localized_error_message('INVALID_AMOUNT_ERROR', $err_msg), 'error');
-
-                return array(
-                    'result' => 'failure',
-                    'message' => $err_msg,
-                );
-            }
-
-            if ($amount > $this->DEFAULT_MAXIMUM_AMOUNT) {
-                WC_Xendit_PG_Helper::cancel_order($order, 'Cancelled because amount is above maximum amount');
-
-                /* translators: %1%s: Currency, 2: Max Amount. */
-                $err_msg = sprintf(__(
-                    'The maximum amount for using this payment is %1$s %2$s. Please remove one or more item(s) from your cart. Code: 100002',
-                    'woo-xendit-virtual-accounts'
-                ), $currency, wc_price($this->DEFAULT_MAXIMUM_AMOUNT));
-
-                wc_add_notice($this->get_localized_error_message('INVALID_AMOUNT_ERROR', $err_msg), 'error');
-
-                return array(
-                    'result' => 'failure',
-                    'message' => $err_msg,
-                );;
-            }
-
-            $blog_name = html_entity_decode(get_option('blogname'), ENT_QUOTES | ENT_HTML5);
-            $description = WC_Xendit_PG_Helper::generate_description($order);
-
-            $payer_email = !empty($order->get_billing_email()) ? $order->get_billing_email() : 'noreply@mail.com';
-            $payment_gateway = wc_get_payment_gateway_by_order($order_id);
-
-            // How likely this condition below will happened?
-            if ($payment_gateway->id != $this->id) {
-                return array(
-                    'result' => 'failure',
-                    'message' => 'Can\'t proceed the order with '.$payment_gateway->id,
-                );
-            }
-
-            $invoice = $order->get_meta('Xendit_invoice');
-            $invoice_exp = $order->get_meta('Xendit_expiry');
-
-            $additional_data = WC_Xendit_PG_Helper::generate_items_and_customer($order);
-            $invoice_data = array(
-                'external_id' => WC_Xendit_PG_Helper::generate_external_id($order, $this->external_id_format),
-                'amount' => $amount,
-                'currency' => $currency,
-                'payer_email' => $payer_email,
-                'description' => $description,
-                'client_type' => 'INTEGRATION',
-                'success_redirect_url' => $this->get_success_redirect_url($order),
-                'failure_redirect_url' => wc_get_checkout_url(),
-                'platform_callback_url' => $this->xendit_callback_url,
-                'checkout_redirect_flow' => $this->redirect_after,
-                'customer' => !empty($additional_data['customer']) ? $additional_data['customer'] : '',
-                'items' => !empty($additional_data['items']) ? $additional_data['items'] : ''
+            $body = array(
+                'woocommerce_order_id'       => $order->get_id(),
+                'cart_hash'                  => $order->get_cart_hash(),
+                'plugin_version'             => WC_XENDIT_PG_VERSION,
+                'reference_id'               => $this->generate_reference_id($order, $this->reference_id_format),
+                'amount'                     => strval($order->get_total()),
+                'currency'                   => $order->get_currency(),
+                'country'                    => WC()->countries->get_base_country(),
+                'description'                => WC_Xendit_PG_Helper::generate_description($order),
+                'success_return_url'         => $this->format_return_url($this->get_return_url($order), $store_url),
+                'cancel_return_url'          => $this->format_return_url(wc_get_checkout_url(), $store_url),
+                'store_url'                  => $store_url,
+                'items'                      => $this->map_items_to_session_payload($order),
+                'customer'                   => $this->map_customer_to_session_payload($order),
+                'billing_address'            => $this->map_address_to_session_payload($order)
             );
 
-            // Generate Xendit payment fees
-            $fees = WC_Xendit_Payment_Fees::generatePaymentFees($order);
-            if (!empty($fees)) {
-                $invoice_data['fees'] = $fees;
-            }
-
-            $header = array(
-                'x-plugin-method' => strtoupper($this->method_code),
-                'x-plugin-store-name' => $blog_name
-            );
-
-            if ($invoice && $invoice_exp > time()) {
-                $response = $this->xenditClass->getInvoice($invoice);
-            } else {
-                $response = $this->xenditClass->createInvoice($invoice_data, $header);
-            }
+            $response = $this->xenditClass->createCheckoutSession($body);
 
             if (!empty($response['error_code'])) {
-                $response['message'] = !empty($response['code']) ? $response['message'] . ' Code: ' . $response['code'] : $response['message'];
-                $message = $this->get_localized_error_message($response['error_code'], $response['message']);
-                $order->add_order_note('Checkout with invoice unsuccessful. Reason: ' . $message);
+                $message = isset($response['message']) ? $response['message'] : 'Unknown error occurred.';
+                wc_add_notice($message, 'error');
 
-                throw new Exception($message);
-            }
-
-            if ($response['status'] == 'PAID' || $response['status'] == 'COMPLETED') {
-                // Return thankyou redirect
                 return array(
-                    'result'    => 'success',
-                    'redirect'  => $this->get_return_url($order)
+                    'result' => 'failure',
+                    'message' => $message
                 );
             }
 
-            $xendit_invoice_url = esc_attr($response['invoice_url']);
-            $order->update_meta_data('Xendit_invoice', esc_attr($response['id']));
-            $order->update_meta_data('Xendit_invoice_url', $xendit_invoice_url);
-            $order->update_meta_data('Xendit_expiry', esc_attr(strtotime($response['expiry_date'])));
+            $payment_link_url = esc_url($response['payment_link_url']);
+            $order->update_meta_data('payment_session_id', $response['payment_session_id']);
+            $order->update_meta_data('payment_session_payment_link_url', $payment_link_url);
             $order->save();
 
             switch ($this->redirect_after) {
@@ -553,126 +405,29 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
                     break;
                 case 'CHECKOUT_PAGE':
                 default:
-                    $return_url = $xendit_invoice_url;
+                    $return_url = $payment_link_url;
             }
 
-            // clear cart session
+            // Clear cart session
             if (WC()->cart) {
                 WC()->cart->empty_cart();
             }
 
-            // Return thankyou redirect
             return array(
-                'result' => 'success',
+                'result'   => 'success',
                 'redirect' => $return_url,
             );
         } catch (Throwable $e) {
+            WC_Xendit_PG_Logger::log("[Xendit Payment Session] Error on process_payment : ".$e->getMessage());
+
             if ($e instanceof Exception) {
                 wc_add_notice($e->getMessage(), 'error');
             }
-            $metrics = $this->xenditClass->constructMetricPayload('woocommerce_checkout', array(
-                'type' => 'error',
-                'payment_method' => strtoupper($this->method_code),
-                'error_message' => $e->getMessage()
-            ));
-            $this->xenditClass->trackMetricCount($metrics);
 
             return array(
                 'result' => 'failure',
-                'message' => $e->getMessage(),
+                'message' => $e->getMessage()
             );
-        }
-    }
-
-    /**
-     * @param $response
-     * @return void
-     */
-    public function validate_payment($response)
-    {
-        global $wpdb, $woocommerce;
-
-        try {
-            $external_id = $response->external_id;
-            $exploded_ext_id = explode("-", $external_id);
-            $order_num = end($exploded_ext_id);
-
-            if (!is_numeric($order_num)) {
-                $exploded_ext_id = explode("_", $external_id);
-                $order_num = end($exploded_ext_id);
-            }
-
-            if (WC_Xendit_PG_Helper::is_advanced_order_number_active()) {
-                // 1. Try direct meta query
-                $orders = wc_get_orders(array(
-                    'meta_key' => '_order_number',
-                    'meta_value' => $order_num,
-                    'limit' => 1
-                ));
-                
-                if (!empty($orders) && count($orders) == 1) {
-                    $order = $orders[0];
-                    $order_num = $order->get_id();
-                }
-            }
-
-            $order = wc_get_order($order_num);
-            $order_id = $order->get_id();
-
-            if ($this->developmentmode != 'yes') {
-                $payment_gateway = wc_get_payment_gateway_by_order($order_id);
-                if (false === get_post_status($order_id) || strpos($payment_gateway->id, 'xendit')) {
-                    header('HTTP/1.1 400 Invalid Data Received');
-                    die('Xendit is live and require a valid order id');
-                }
-            }
-
-            if (in_array($response->status, array('PAID', 'SETTLED'))) {
-                //update payment method in case customer change method after invoice is generated
-                $order->set_payment_method($this->id);
-                $order->set_payment_method_title($this->method_title);
-
-                //save charge ID if paid by credit card
-                if ($response->channel == 'CREDIT_CARD' && !empty($response->credit_card_charge_id)) {
-                    $order->set_transaction_id($response->credit_card_charge_id);
-                }
-
-                $order->save();
-
-                $notes = WC_Xendit_PG_Helper::build_order_notes(
-                    $response->id,
-                    $response->status,
-                    $response->channel,
-                    $order->get_currency(),
-                    $order->get_total()
-                );
-                WC_Xendit_PG_Helper::complete_payment($order, $notes, $this->success_payment_xendit);
-
-                // Empty cart in action
-                $woocommerce->cart->empty_cart();
-
-                die('Success');
-            } else {
-                if (empty($order->get_meta('Xendit_invoice_expired'))) {
-                    $order->add_meta_data('Xendit_invoice_expired', 1);
-                }
-                $order->update_status('failed');
-
-                $notes = WC_Xendit_PG_Helper::build_order_notes(
-                    $response->id,
-                    $response->status,
-                    $response->channel,
-                    $order->get_currency(),
-                    $order->get_total()
-                );
-
-                $order->add_order_note( wp_kses("<b>Xendit payment failed.</b><br>", ['b' => true, 'br' => true]). $notes);
-                die(esc_html('Invoice ' . $response->channel . ' status is ' . $response->status));
-            }
-        } catch (Exception $e) {
-            header('HTTP/1.1 500 Server Error');
-            echo esc_html($e->getMessage());
-            exit;
         }
     }
 
@@ -697,17 +452,6 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         }
 
         if (!$this->xenditClass->isCredentialExist()) {
-            unset($gateways[$this->id]);
-            return $gateways;
-        }
-
-        /**
-         * get_cart_contents_total() will give us just the final (float) amount after discounts.
-         * Compatible with WC version 3.2.0 & above.
-         * Source: https://woocommerce.github.io/code-reference/classes/WC-Cart.html#method_get_cart_contents_total
-         */
-        $amount = $woocommerce->cart->get_total('');
-        if ($amount > $this->DEFAULT_MAXIMUM_AMOUNT) {
             unset($gateways[$this->id]);
             return $gateways;
         }
@@ -763,19 +507,6 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         }
 
         throw new Exception(esc_html('Validate XenPlatform User failed'));
-    }
-
-    /**
-     * @param array $settings
-     * @return bool
-     */
-    protected function is_test_mode(array $settings = []): bool
-    {
-        if (empty($settings['secret_key']) && !empty($settings['secret_key_dev'])) {
-            return true;
-        }
-
-        return false;
     }
 
     /**
@@ -850,20 +581,6 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         return true;
     }
 
-    /**
-     * @param $count
-     * @return string
-     */
-    private function generateStarChar($count = 0): string
-    {
-        $result = '';
-        for ($i = 0; $i < $count; $i++) {
-            $result .= '*';
-        }
-
-        return $result;
-    }
-
     public function get_localized_error_message($error_code, $message)
     {
         switch ($error_code) {
@@ -883,84 +600,6 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     }
 
     /**
-     * @param $order_id
-     * @param $old_status
-     * @param $new_status
-     * @return void
-     * @throws Exception
-     */
-    public function expire_invoice_when_order_cancelled($order_id, $old_status, $new_status)
-    {
-        if ($new_status !== 'cancelled') {
-            return;
-        }
-
-        $order = wc_get_order($order_id);
-        if ($order) {
-            $payment_method = $order->get_payment_method();
-            $xendit_invoice_expired = $order->get_meta('Xendit_invoice_expired');
-            $xendit_invoice_id = $order->get_meta('Xendit_invoice');
-
-            if (preg_match('/xendit/i', $payment_method)
-                && empty($xendit_invoice_expired)
-            ) {
-                // Expire Xendit invoice
-                $response = $this->xenditClass->expiredInvoice($xendit_invoice_id);
-                if (!empty($response) && !isset($response['error_code'])) {
-                    $order->add_meta_data('Xendit_invoice_expired', 1);
-                    $order->save();
-                }
-            }
-        }
-    }
-
-    /**
-     * Cancel all unpaid orders after held duration to prevent stock lock for those products.
-     */
-    public function custome_cancel_unpaid_orders()
-    {
-        global $wpdb;
-
-        $held_duration = get_option('woocommerce_hold_stock_minutes');
-
-        if ($held_duration < 1 || 'yes' !== get_option('woocommerce_manage_stock')) {
-            return;
-        }
-
-        $canceled_order = $wpdb->get_col(
-            $wpdb->prepare(
-				// @codingStandardsIgnoreStart
-				"SELECT posts.ID
-				FROM {$wpdb->posts} AS posts
-                LEFT JOIN {$wpdb->postmeta} AS pm_expired
-                    ON posts.ID = pm_expired.post_id
-                        AND pm_expired.meta_key = 'Xendit_invoice_expired'
-                LEFT JOIN {$wpdb->postmeta} AS pm_method
-                    ON posts.ID = pm_method.post_id
-                        AND pm_method.meta_key = '_payment_method'
-				WHERE posts.post_type IN ('" . implode( "','", wc_get_order_types() ) . "')
-                    AND posts.post_status = 'wc-cancelled'
-                    AND `pm_method`.`meta_value` LIKE 'xendit_%'
-                    AND pm_expired.meta_id IS NULL"
-			)
-		);
-
-        if ($canceled_order) {
-            foreach ($canceled_order as $cancel_order) {
-                $order = wc_get_order( $cancel_order );
-                $xendit_invoice_expired = $order->get_meta('Xendit_invoice_expired');
-                $xendit_invoice_id = $order->get_meta('Xendit_invoice');
-                if (empty($xendit_invoice_expired)) {
-                    $order->add_meta_data('Xendit_invoice_expired', 1);
-                    $order->save();
-
-                    $response = $this->xenditClass->expiredInvoice($xendit_invoice_id);
-                }
-            }
-        }
-    }
-
-    /**
      * @param $public_key
      * @param $public_key_dev
      * @return true
@@ -976,6 +615,145 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
         }
 
         return true;
+    }
+
+    /**
+     * Copy and modified from libs/class-wc-xendit-helper.php
+     * @param $transaction_id
+     * @param $status
+     * @param $payment_method
+     * @param $currency
+     * @param $amount
+     * @param $installment
+     * @return string
+     */
+    public function build_order_notes($transaction_id, $status, $currency, $amount)
+    {
+        $notes  = "Transaction ID: " . $transaction_id . "<br>";
+        $notes .= "Status: " . $status . "<br>";
+        $notes .= "Amount: " . $currency . " " . number_format($amount);
+
+        return $notes;
+    }
+
+
+    /*******************************************************************************
+        Private function
+     *******************************************************************************/
+
+    /**
+     * @param $count
+     * @return string
+     */
+    private function generateStarChar($count = 0): string
+    {
+        $result = '';
+        for ($i = 0; $i < $count; $i++) {
+            $result .= '*';
+        }
+
+        return $result;
+    }
+
+    private function format_return_url($return_url, $store_url) {
+        $store_url = rtrim($store_url, '/');
+        return preg_replace('/^https?:\/\/[^\/?]+/', $store_url, $return_url);
+    }
+
+    private function map_customer_to_session_payload(WC_Order $order) {
+        $email = $order->get_billing_email();
+        $customer = array(
+            'individual_detail' => array(
+                'given_names' => $order->get_billing_first_name(),
+                'surname' => $order->get_billing_last_name()
+            )
+        );
+
+        if (!empty($email)) {
+            $customer['email'] = $email;
+        }
+
+        return $customer;
+    }
+
+    private function map_address_to_session_payload(WC_Order $order) {
+        $has_shipping = !empty($order->get_shipping_country()) && !empty($order->get_shipping_address_1());
+
+        if ($has_shipping) {
+            return array(
+                'country'       => $order->get_shipping_country(),
+                'street_line1'  => $order->get_shipping_address_1(),
+                'street_line2'  => $order->get_shipping_address_2(),
+                'city'          => $order->get_shipping_city(),
+                'province_state' => $order->get_shipping_state(),
+                'postal_code'   => $order->get_shipping_postcode()
+            );
+        }
+
+        return array(
+            'country'       => $order->get_billing_country(),
+            'street_line1'  => $order->get_billing_address_1(),
+            'street_line2'  => $order->get_billing_address_2(),
+            'city'          => $order->get_billing_city(),
+            'province_state' => $order->get_billing_state(),
+            'postal_code'   => $order->get_billing_postcode()
+        );
+    }
+
+    private function map_items_to_session_payload(WC_Order $order) {
+        $items = array();
+        foreach ($order->get_items() as $item_data) {
+            if (!is_object($item_data)) {
+                continue;
+            }
+
+            // Get an instance of WC_Product object
+            /** @var WC_Product $product */
+            $product = $item_data->get_product();
+            if (!is_object($product)) {
+                continue;
+            }
+
+            // Get all category names of item
+            $category_names = wp_get_post_terms($item_data->get_product_id(), 'product_cat', ['fields' => 'names']);
+
+            $item = array();
+            $item['id']         = $product->get_id();
+            $item['name']       = $product->get_name();
+            $item['price']      = strval($order->get_item_subtotal($item_data));
+            $item['quantity']   = $item_data->get_quantity();
+
+            if (!empty(get_permalink($item['id']))) {
+                $item['url']    = get_permalink($item['id']);
+            }
+
+            if (!empty($category_names)) {
+                $item['category']   = implode(', ', $category_names);
+            }
+
+            array_push($items, $item);
+        }
+
+        return $items;
+    }
+
+    /**
+     * Generate reference id
+     * copied from libs/class-wc-xendit-helper.php from generate_extenal_id
+     *
+     * @param WC_Order $order
+     * @param $reference_id_format
+     * @return string
+     */
+    private function generate_reference_id(WC_Order $order, $reference_id_format): string
+    {
+        $identifier = $order->get_id();
+        if (WC_Xendit_PG_Helper::is_advanced_order_number_active()) {
+            if (method_exists($order, 'get_order_number')) {
+                $identifier = $order->get_order_number();
+            }
+        }
+        return sprintf('%s-%s', $reference_id_format, $identifier);
     }
 
     /**
