@@ -371,39 +371,8 @@ class WC_Xendit_Invoice extends WC_Payment_Gateway
     public function init_form_fields()
     {
         $this->form_fields = require(WC_XENDIT_PG_PLUGIN_PATH . '/libs/settings/wc-xendit-gateway-settings.php');
-   
-        $is_new_merchant = $this->get_option('is_new_merchant_when_payment_session_introduced');
-
-        // Show the toggle only if they are current merchant integrated with WooCommerce
-        // Otherwise delete the form fields of 'enable_payment_session'
-        if ($is_new_merchant == 'yes') {
-            unset($this->form_fields['payment_session_option'], $this->form_fields['enable_payment_session']);
-        }
     }
 
-
-    /**
-     * Render a toggle switch for WooCommerce settings fields with type 'toggle'.
-     */
-    public function generate_toggle_html($key, $data): string
-    {
-        $field_key = $this->get_field_key($key);
-        $checked   = ($this->get_option($key) === 'yes') ? 'checked' : '';
-        $title     = $data['title'] ?? '';
-        $desc      = $data['description'] ?? '';
-
-        ob_start();
-        include plugin_dir_path(__FILE__) . 'views/admin/toggle-field.php';
-        return ob_get_clean();
-    }
-
-    /**
-     * Validate toggle field — maps checkbox value to 'yes'/'no'.
-     */
-    public function validate_toggle_field($key, $value): string
-    {
-        return ($value === 'yes') ? 'yes' : 'no';
-    }
 
     public function payment_fields()
     {

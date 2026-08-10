@@ -305,37 +305,6 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
     public function init_form_fields()
     {
         $this->form_fields = require(WC_XENDIT_PG_PLUGIN_PATH . '/libs/settings/wc-xendit-gateway-settings.php');
-   
-        $is_new_merchant = $this->get_option('is_new_merchant_when_payment_session_introduced');
-
-        // Show the toggle only if they are current merchant integrated with WooCommerce
-        // Otherwise delete the form fields of 'enable_payment_session'
-        if ($is_new_merchant == 'yes') {
-            unset($this->form_fields['payment_session_option'], $this->form_fields['enable_payment_session']);
-        }
-    }
-
-    /**
-     * Render a toggle switch for WooCommerce settings fields with type 'toggle'.
-     */
-    public function generate_toggle_html($key, $data): string
-    {
-        $field_key = $this->get_field_key($key);
-        $checked   = ($this->get_option($key) === 'yes') ? 'checked' : '';
-        $title     = $data['title'] ?? '';
-        $desc      = $data['description'] ?? '';
-
-        ob_start();
-        include plugin_dir_path(__FILE__) . 'views/admin/toggle-field.php';
-        return ob_get_clean();
-    }
-
-    /**
-     * Validate toggle field — maps checkbox value to 'yes'/'no'.
-     */
-    public function validate_toggle_field($key, $value): string
-    {
-        return ($value === 'yes') ? 'yes' : 'no';
     }
 
     public function payment_fields()
@@ -359,7 +328,7 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
         try {
             $return_url = '';
             $order = wc_get_order($order_id);
-            $store_url = !empty($this->notification_url) ? $this->notification_url : home_url();
+            $store_url = defined('LOCAL_MODE') && LOCAL_MODE === true ? $this->notification_url : home_url();
 
             $body = array(
                 'woocommerce_order_id'       => $order->get_id(),
@@ -370,8 +339,8 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
                 'currency'                   => $order->get_currency(),
                 'country'                    => WC()->countries->get_base_country(),
                 'description'                => WC_Xendit_PG_Helper::generate_description($order),
-                'success_return_url'         => $this->format_return_url($this->get_return_url($order), $store_url),
-                'cancel_return_url'          => $this->format_return_url(wc_get_checkout_url(), $store_url),
+                'success_return_url'         => $this->format_return_url($this->get_return_url($order)),
+                'cancel_return_url'          => $this->format_return_url(wc_get_checkout_url()),
                 'store_url'                  => $store_url,
                 'items'                      => $this->map_items_to_session_payload($order),
                 'customer'                   => $this->map_customer_to_session_payload($order),
@@ -655,9 +624,14 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
         return $result;
     }
 
-    private function format_return_url($return_url, $store_url) {
-        $store_url = rtrim($store_url, '/');
-        return preg_replace('/^https?:\/\/[^\/?]+/', $store_url, $return_url);
+    private function format_return_url($return_url) {
+        // Only rewrite URLs in LOCAL_MODE, where return URLs point to localhost
+        // and need to be swapped for a public tunnel URL (e.g. ngrok).
+        if (!defined('LOCAL_MODE') || LOCAL_MODE !== true) {
+            return $return_url;
+        }
+        $notification_url = rtrim($this->notification_url, '/');
+        return preg_replace('/^https?:\/\/[^\/?]+/', $notification_url, $return_url);
     }
 
     private function map_customer_to_session_payload(WC_Order $order) {

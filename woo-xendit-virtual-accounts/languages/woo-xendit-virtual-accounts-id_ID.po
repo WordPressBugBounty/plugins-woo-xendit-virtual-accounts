@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2022-09-06 09:34+0700\n"
-"PO-Revision-Date: 2026-03-10 07:51+0700\n"
+"PO-Revision-Date: 2026-08-07 11:01+0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: id\n"
@@ -213,6 +213,9 @@ msgstr "Aktifkan Payment Session"
 
 msgid "Notification URL"
 msgstr "URL Notifikasi"
+
+msgid "Notification Options"
+msgstr "Opsi Notifikasi"
 
 msgid "Notification url to receive payment notification"
 msgstr "URL notifikasi untuk menerima status pembayaran"

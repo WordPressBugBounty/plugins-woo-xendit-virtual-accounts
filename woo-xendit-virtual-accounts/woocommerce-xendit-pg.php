@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 Plugin Name: Xendit Payment
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 7.1.0
+Version: 7.2.0
 Requires Plugins: woocommerce
 Text Domain: woo-xendit-virtual-accounts
 Domain Path: /languages
@@ -17,7 +17,7 @@ License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
 
-define('WC_XENDIT_PG_VERSION', '7.1.0');
+define('WC_XENDIT_PG_VERSION', '7.2.0');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
@@ -131,10 +131,7 @@ function xendit_payment_init()
              */
             public function add_xendit_payment_gateway($methods)
             {
-                $main_settings = get_option('woocommerce_xendit_gateway_settings');
-                $is_payment_session_enabled = !empty($main_settings['enable_payment_session']) && $main_settings['enable_payment_session'] == 'yes';
-
-                $methods[] = $is_payment_session_enabled ? 'WC_Xendit_Payment_Session_Gateway' : 'WC_Xendit_Invoice';
+                $methods[] = 'WC_Xendit_Payment_Session_Gateway';
 
                 // For admin
                 if (is_admin()) {
@@ -586,29 +583,6 @@ function xendit_payment_init()
         }
 
         return $gateways;
-    }
-
-    /**
-     * Force merchant to enable payment session on first load.
-     * Runs once — sets `is_new_merchant_when_payment_session_introduced` and
-     * `enable_payment_session` to "yes" for enabling the toggle in woocommerce dashboard.
-     */
-    add_action('init', 'introduce_to_payment_session');
-    function introduce_to_payment_session()
-    {
-        $settings = get_option('woocommerce_xendit_gateway_settings', []);
-
-        if (!empty($settings['is_new_merchant_when_payment_session_introduced'])) {
-            return;
-        }
-
-        $api = new WC_Xendit_PG_API();
-        $has_no_credentials = !$api->isCredentialExist();
-
-        $settings['is_new_merchant_when_payment_session_introduced'] = $has_no_credentials ? 'yes' : 'no';
-        $settings['enable_payment_session'] = 'yes';
-
-        update_option('woocommerce_xendit_gateway_settings', $settings);
     }
 
     /**
