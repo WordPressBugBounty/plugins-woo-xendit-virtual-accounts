@@ -118,7 +118,7 @@ class WC_Xendit_Sanitized_Webhook {
         $oauth_data = array(
             'business_id' => self::safe_sanitize($data['oauth_data'], 'business_id'),
             'platform' => self::safe_sanitize($data['oauth_data'], 'platform'),
-            'validate_key' => self::safe_sanitize($data, 'validate_key'),
+            'validate_key' => self::safe_sanitize($data['oauth_data'], 'validate_key'),
             'id' => self::safe_sanitize($data['oauth_data'], 'id'),
             'store_url' => self::safe_sanitize($data['oauth_data'], 'store_url'),
             'oauth_data_production' => array(

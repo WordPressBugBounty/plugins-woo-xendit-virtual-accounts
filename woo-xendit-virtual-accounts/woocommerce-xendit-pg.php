@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 Plugin Name: Xendit Payment
 Plugin URI: https://wordpress.org/plugins/woo-xendit-virtual-accounts
 Description: Accept payments in Indonesia with Xendit. Seamlessly integrated into WooCommerce.
-Version: 7.2.0
+Version: 7.2.1
 Requires Plugins: woocommerce
 Text Domain: woo-xendit-virtual-accounts
 Domain Path: /languages
@@ -17,7 +17,7 @@ License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
 
-define('WC_XENDIT_PG_VERSION', '7.2.0');
+define('WC_XENDIT_PG_VERSION', '7.2.1');
 define('WC_XENDIT_PG_MAIN_FILE', __FILE__);
 define('WC_XENDIT_PG_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
@@ -55,6 +55,7 @@ function xendit_payment_init()
                 require_once dirname(__FILE__) . '/libs/class/integration-notification.php';
                 require_once dirname(__FILE__) . '/libs/class/class-wc-xendit-notification-result.php';
                 require_once dirname(__FILE__) . '/libs/class/class-wc-xendit-payment-session-notification-handler.php';
+                require_once dirname(__FILE__) . '/libs/class/class-wc-xendit-oauth-handler.php';
 
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-payment-fees.php';
                 require_once dirname(__FILE__) . '/libs/helpers/class-wc-expired.php';
@@ -204,7 +205,8 @@ function xendit_payment_init()
 
     function xendit_disconect()
     {
-        WC_Xendit_Oauth::disconnect();
+        $handler = new WC_Xendit_Oauth_Handler();
+        $handler->disconnect();
 
         $response = new WP_REST_Response(['message' => 'success']);
         $response->set_status(201);
@@ -463,72 +465,14 @@ function xendit_payment_init()
 
         header('Content-Type: application/json; charset=utf-8');
 
-        try {
-            $data = file_get_contents("php://input");
-            $response = json_decode($data, true);
-            $response = WC_Xendit_Sanitized_Webhook::map_and_sanitized_oauth_webhook($response);
-            $is_connected = false;
+        $data     = file_get_contents("php://input");
+        $raw_data = json_decode($data, true);
 
-            if (empty($response['oauth_data']) || empty($response['public_key_dev']) || empty($response['public_key_prod'])) {
-                throw new Exception("INVALID_OAUTH_RESPONSE", 1);
-            }
+        $handler = new WC_Xendit_Oauth_Handler();
+        $result  = $handler->handle($raw_data);
 
-            // Delete OAuth error cache
-            delete_transient('xendit_oauth_error');
-
-            if (!empty($response['oauth_data']['validate_key'])
-                    && $response['oauth_data']['validate_key'] !== WC_Xendit_Oauth::getValidationKey()
-            ) {
-                throw new Exception("VALIDATE_KEY_MISMATCH", 1);
-            }
-
-            if (isset($response['error_code'])) {
-                set_transient('xendit_oauth_error', $response["error_code"], 10);
-            } else {
-                $is_connected = true;
-
-                // Update Oauth
-                WC_Xendit_Oauth::updateXenditOAuth($response);
-
-                // Update Public keys
-                WC_Xendit_Invoice::instance()->update_public_keys(
-                    $response['public_key_prod'],
-                    $response['public_key_dev'],
-                );
-            }
-
-            header('HTTP/1.1 200 Success');
-            $res = array('is_connected' => $is_connected);
-            die(json_encode($res, JSON_PRETTY_PRINT));
-        } catch (Exception $e) {
-            switch ($e->getMessage()) {
-                case 'VALIDATE_KEY_MISMATCH':
-                    $res = array(
-                        'error_code' => 'VALIDATE_KEY_MISMATCH',
-                        'message' => 'Validation key is mismatch'
-                    );
-                    header('HTTP/1.1 400 Validation Error');
-                    break;
-
-                case 'INVALID_OAUTH_RESPONSE':
-                    $res = array(
-                        'error_code' => 'INVALID_OAUTH_RESPONSE',
-                        'message' => 'Invalid OAuth response'
-                    );
-                    header('HTTP/1.1 400 Validation Error');
-                    break;
-
-                default:
-                    $res = array(
-                        'error_code' => 'SERVER_ERROR',
-                        'message' => 'Oops, something wrong happened! Please try again.'
-                    );
-                    header('HTTP/1.1 500 Server Error');
-                    break;
-            }
-
-            die(json_encode($res, JSON_PRETTY_PRINT));
-        }
+        header("HTTP/1.1 {$result['status_code']} {$result['status_text']}");
+        die(json_encode($result['body'], JSON_PRETTY_PRINT));
     }
 
     #TODO: Mark for removal as it no longer relevant, re-visit when invoice class is removed

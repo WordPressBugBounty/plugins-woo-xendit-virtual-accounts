@@ -328,7 +328,7 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
         try {
             $return_url = '';
             $order = wc_get_order($order_id);
-            $store_url = defined('LOCAL_MODE') && LOCAL_MODE === true ? $this->notification_url : home_url();
+            $store_url = $this->is_local_mode() ? $this->notification_url : home_url();
 
             $body = array(
                 'woocommerce_order_id'       => $order->get_id(),
@@ -343,9 +343,14 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
                 'cancel_return_url'          => $this->format_return_url(wc_get_checkout_url()),
                 'store_url'                  => $store_url,
                 'items'                      => $this->map_items_to_session_payload($order),
-                'customer'                   => $this->map_customer_to_session_payload($order),
-                'billing_address'            => $this->map_address_to_session_payload($order)
+                'customer'                   => $this->map_customer_to_session_payload($order)
             );
+
+            $billing_address = $this->map_address_to_session_payload($order);
+
+            if(isset($billing_address)) {
+                $body['billing_address'] = $billing_address;
+            }
 
             $response = $this->xenditClass->createCheckoutSession($body);
 
@@ -611,6 +616,18 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
      *******************************************************************************/
 
     /**
+     * Returns true when the site is running in local tunnel mode.
+     * Extracted from the LOCAL_MODE constant so tests can override it via
+     * a subclass or by setting the $local_mode_override property via reflection.
+     *
+     * @return bool
+     */
+    protected function is_local_mode(): bool
+    {
+        return defined('LOCAL_MODE') && LOCAL_MODE === true;
+    }
+
+    /**
      * @param $count
      * @return string
      */
@@ -627,7 +644,7 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
     private function format_return_url($return_url) {
         // Only rewrite URLs in LOCAL_MODE, where return URLs point to localhost
         // and need to be swapped for a public tunnel URL (e.g. ngrok).
-        if (!defined('LOCAL_MODE') || LOCAL_MODE !== true) {
+        if (!$this->is_local_mode()) {
             return $return_url;
         }
         $notification_url = rtrim($this->notification_url, '/');
@@ -636,15 +653,20 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
 
     private function map_customer_to_session_payload(WC_Order $order) {
         $email = $order->get_billing_email();
+        $given_names = !empty($order->get_shipping_first_name()) ? $order->get_shipping_first_name() : $order->get_billing_first_name();
+        $surname = !empty($order->get_shipping_last_name()) ? $order->get_shipping_last_name() : $order->get_billing_last_name();
         $customer = array(
             'individual_detail' => array(
-                'given_names' => $order->get_billing_first_name(),
-                'surname' => $order->get_billing_last_name()
+                'given_names' => $given_names
             )
         );
 
         if (!empty($email)) {
             $customer['email'] = $email;
+        }
+
+        if (!empty($surname)) {
+            $customer['individual_detail']['surname'] = $surname;
         }
 
         return $customer;
@@ -653,25 +675,39 @@ class WC_Xendit_Payment_Session_Gateway extends WC_Payment_Gateway
     private function map_address_to_session_payload(WC_Order $order) {
         $has_shipping = !empty($order->get_shipping_country()) && !empty($order->get_shipping_address_1());
 
-        if ($has_shipping) {
-            return array(
-                'country'       => $order->get_shipping_country(),
-                'street_line1'  => $order->get_shipping_address_1(),
-                'street_line2'  => $order->get_shipping_address_2(),
-                'city'          => $order->get_shipping_city(),
-                'province_state' => $order->get_shipping_state(),
-                'postal_code'   => $order->get_shipping_postcode()
-            );
+        $country = $has_shipping ? $order->get_shipping_country() : $order->get_billing_country();
+        $street_line1 = $has_shipping ? $order->get_shipping_address_1() : $order->get_billing_address_1();
+        $street_line2 = $has_shipping ? $order->get_shipping_address_2() : $order->get_billing_address_2();
+        $city = $has_shipping ? $order->get_shipping_city() : $order->get_billing_city();
+        $province_state = $has_shipping ? $order->get_shipping_state() : $order->get_billing_state();
+        $postal_code = $has_shipping ? $order->get_shipping_postcode() : $order->get_billing_postcode();
+
+        $billing = array();
+        if (!empty($country)) {
+            $billing['country'] = $country;
         }
 
-        return array(
-            'country'       => $order->get_billing_country(),
-            'street_line1'  => $order->get_billing_address_1(),
-            'street_line2'  => $order->get_billing_address_2(),
-            'city'          => $order->get_billing_city(),
-            'province_state' => $order->get_billing_state(),
-            'postal_code'   => $order->get_billing_postcode()
-        );
+        if (!empty($street_line1)) {
+            $billing['street_line1'] = $street_line1;
+        }
+
+        if (!empty($street_line2)) {
+            $billing['street_line2'] = $street_line2;
+        }
+
+        if (!empty($city)) {
+            $billing['city'] = $city;
+        }
+
+        if (!empty($province_state)) {
+            $billing['province_state'] = $province_state;
+        }
+
+        if (!empty($postal_code)) {
+            $billing['postal_code'] = $postal_code;
+        }
+
+        return $billing ?: null;
     }
 
     private function map_items_to_session_payload(WC_Order $order) {

@@ -3,7 +3,7 @@ Contributors: tpixendit
 Tags: xendit, payment, payment gateway, payment, southeast asia
 Requires at least: 4.9
 Tested up to: 6.9
-Stable tag: 7.2.0
+Stable tag: 7.2.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,10 @@ To enrich the eCommerce experience, Xendit-WooCommerce plugin allows secure onli
 8. Adjust your settings and save. You can see the new payment options by viewing your WooCommerce checkout page while you have items in the cart.
 
 == Changelog ==
+= 7.2.1 =
+- Bugfix: fix on customer and billing address mapping for payment session creation 
+- Bugfix: fix CVE-2026-66473 on missing Authorization in Xendit Payment
+
 = 7.2.0 =
 - Bugfix: return URL rewriting via format_return_url is now skipped in production; it only runs in LOCAL_MODE where localhost URLs need to be swapped for a public tunnel.
 - Remove toggle options to enable payment session

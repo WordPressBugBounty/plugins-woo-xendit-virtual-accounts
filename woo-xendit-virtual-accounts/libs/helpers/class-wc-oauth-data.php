@@ -61,21 +61,6 @@ class WC_Xendit_Oauth
         return get_option(self::XENDIT_OAUTH_OPTION_NAME);
     }
 
-    public static function disconnect(): void
-    {
-        self::removeXenditOAuth();
-
-        $settings = get_option(self::GATEWAY_SETTINGS_OPTION, []);
-        $keys_to_remove = array_merge(self::CREDENTIAL_KEYS, self::MERCHANT_INFO_KEYS);
-
-        foreach ($keys_to_remove as $key) {
-            unset($settings[$key]);
-        }
-        update_option(self::GATEWAY_SETTINGS_OPTION, $settings);
-
-        self::clearMerchantCache();
-    }
-
     public static function clearMerchantCache(): void
     {
         delete_transient(self::MERCHANT_CACHE_TRANSIENT);
